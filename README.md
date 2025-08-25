@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎨 Concours de Dessin
 
-## Getting Started
+Une application web pour organiser des concours de dessin quotidiens entre amis !
 
-First, run the development server:
+## Fonctionnalités
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Authentification** avec Supabase
+- **Thème quotidien** révélé chaque jour
+- **Upload de dessins** avec drag & drop
+- **Galerie** visible après minuit
+- **Interface admin** pour gérer les thèmes
+- **Design moderne** et responsive
+
+## Configuration
+
+### 1. Variables d'environnement
+
+Créez un fichier `.env.local` à la racine du projet avec les variables suivantes :
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Cloudinary Configuration
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your_cloudinary_upload_preset
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configuration Supabase
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Créez un projet sur [Supabase](https://supabase.com)
+2. Récupérez votre URL et clé anonyme dans les paramètres du projet
+3. Créez les tables suivantes dans votre base de données :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+#### Table `themes`
+```sql
+CREATE TABLE themes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  date DATE NOT NULL,
+  is_active BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
-## Learn More
+#### Table `drawings`
+```sql
+CREATE TABLE drawings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  theme_id UUID REFERENCES themes(id) ON DELETE CASCADE,
+  image_url TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
-To learn more about Next.js, take a look at the following resources:
+#### Table `users` (extension de auth.users)
+```sql
+CREATE TABLE users (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT NOT NULL,
+  name TEXT,
+  is_admin BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Configuration Cloudinary
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Créez un compte sur [Cloudinary](https://cloudinary.com)
+2. Récupérez votre Cloud Name
+3. Créez un Upload Preset dans les paramètres de votre compte
+4. Configurez le preset pour être "unsigned" pour les uploads côté client
 
-## Deploy on Vercel
+## Installation et lancement
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Installer les dépendances
+npm install
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Lancer le serveur de développement
+npm run dev
+```
+
+L'application sera accessible sur `http://localhost:3000`
+
+## Utilisation
+
+### Pour les utilisateurs
+1. Créez un compte ou connectez-vous
+2. Consultez le thème du jour
+3. Uploadez votre dessin avant minuit
+4. Après minuit, consultez la galerie de tous les dessins
+
+### Pour les administrateurs
+1. Accédez à `/admin`
+2. Ajoutez des thèmes pour les jours à venir
+3. Activez/désactivez les thèmes selon vos besoins
+
+## Technologies utilisées
+
+- **Next.js 15** - Framework React
+- **TypeScript** - Typage statique
+- **Supabase** - Authentification et base de données
+- **Cloudinary** - Stockage d'images
+- **Tailwind CSS** - Styling
+- **React Dropzone** - Upload de fichiers
+
+## Structure du projet
+
+```
+src/
+├── app/                 # Pages Next.js
+│   ├── admin/          # Page d'administration
+│   └── page.tsx        # Page principale
+├── components/         # Composants React
+├── hooks/             # Hooks personnalisés
+└── lib/               # Configuration et utilitaires
+```
+
+## Déploiement
+
+L'application peut être déployée sur Vercel, Netlify ou tout autre service supportant Next.js.
+
+N'oubliez pas de configurer les variables d'environnement sur votre plateforme de déploiement !

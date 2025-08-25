@@ -1,42 +1,224 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Thème violet + mode sombre OLED, utilitaires réutilisables */
+
+@layer base {
+    :root {
+        --brand: 124 58 237; /* violet-600 */
+        --brand-700: 109 40 217; /* violet-700 */
+        --brand-500: 139 92 246; /* violet-500 */
+        --brand-100: 237 233 254; /* violet-100 */
+        --surface: 255 255 255;
+        --muted: 99 102 241; /* indigo-500 pour accents secondaires */
+    }
+
+    html {
+        color-scheme: light dark;
+    }
+
+    body {
+        @apply text-slate-800 antialiased;
+        background-image:
+            radial-gradient(
+                1200px 500px at 10% -10%,
+                rgba(139, 92, 246, 0.15),
+                transparent
+            ),
+            radial-gradient(
+                800px 400px at 90% 10%,
+                rgba(124, 58, 237, 0.12),
+                transparent
+            );
+        background-color: rgb(248 250 252);
+    }
+
+    .dark body {
+        @apply text-slate-200;
+        background: #000; /* OLED pur */
+    }
+
+    ::selection {
+        background-color: rgba(124, 58, 237, 0.25);
+        color: currentColor;
+    }
+
+    a {
+        @apply text-violet-700 hover:text-violet-800 underline-offset-4 hover:underline;
+    }
+    .dark a {
+        @apply text-violet-300 hover:text-violet-200;
+    }
+
+    /* Scrollbar (WebKit) */
+    *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+        background: rgba(124, 58, 237, 0.35);
+        border-radius: 9999px;
+    }
+    .dark *::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.35);
+    }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@layer components {
+    /* Cartes */
+    .card {
+        @apply rounded-xl border border-violet-100/70 bg-white/80 shadow-sm backdrop-blur-sm;
+    }
+    .card-hover {
+        @apply transition-shadow hover:shadow-md;
+    }
+    .dark .card {
+        @apply border-violet-900/40 bg-black;
+    }
+
+    /* Boutons */
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+    .dark .btn {
+        @apply focus-visible:ring-offset-black;
+    }
+    .btn-primary {
+        @apply btn bg-violet-600 text-white hover:bg-violet-700 active:bg-violet-700 shadow-sm;
+    }
+    .btn-ghost {
+        @apply btn bg-transparent text-violet-700 hover:bg-violet-50;
+    }
+    .dark .btn-ghost {
+        @apply text-violet-300 hover:bg-white/5;
+    }
+    .btn-danger {
+        @apply btn bg-rose-600 text-white hover:bg-rose-700;
+    }
+    .btn-warning {
+        @apply btn bg-amber-500 text-white hover:bg-amber-600;
+    }
+    .btn-success {
+        @apply btn bg-emerald-600 text-white hover:bg-emerald-700;
+    }
+
+    /* Inputs */
+    .input {
+        @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder-slate-400 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-500 focus:outline-none;
+    }
+    .dark .input {
+        @apply border-slate-700 bg-black text-slate-100 placeholder-slate-500;
+    }
+    .textarea {
+        @apply input resize-y min-h-[120px];
+    }
+    .select {
+        @apply input pr-9;
+    }
+
+    /* Badges */
+    .badge {
+        @apply inline-flex items-center rounded-full px-2 py-1 text-xs font-medium;
+    }
+    .badge-muted {
+        @apply badge bg-violet-100 text-violet-800;
+    }
+    .dark .badge-muted {
+        @apply bg-violet-950/40 text-violet-200 border border-violet-900/50;
+    }
+    .badge-success {
+        @apply badge bg-emerald-100 text-emerald-800;
+    }
+    .dark .badge-success {
+        @apply bg-emerald-900/30 text-emerald-300 border border-emerald-900/40;
+    }
+    .badge-neutral {
+        @apply badge bg-slate-100 text-slate-700;
+    }
+    .dark .badge-neutral {
+        @apply bg-white/5 text-slate-300 border border-white/10;
+    }
+
+    /* Alerts */
+    .alert {
+        @apply rounded-lg border px-4 py-3 text-sm;
+    }
+    .alert-info {
+        @apply alert border-violet-200 bg-violet-50 text-violet-800;
+    }
+    .dark .alert-info {
+        @apply border-violet-900/40 bg-violet-950/30 text-violet-200;
+    }
+    .alert-success {
+        @apply alert border-emerald-200 bg-emerald-50 text-emerald-800;
+    }
+    .dark .alert-success {
+        @apply border-emerald-900/40 bg-emerald-950/30 text-emerald-200;
+    }
+    .alert-error {
+        @apply alert border-rose-200 bg-rose-50 text-rose-800;
+    }
+    .dark .alert-error {
+        @apply border-rose-900/40 bg-rose-950/30 text-rose-200;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        @apply fixed inset-0 z-50 bg-black/70 backdrop-blur-sm;
+    }
+    .modal-card {
+        @apply mx-auto max-w-2xl rounded-2xl border border-white/20 bg-white p-0 shadow-xl;
+    }
+    .dark .modal-card {
+        @apply border-white/10 bg-neutral-950;
+    }
+
+    /* Surfaces vitrées et légères */
+    .glass {
+        @apply rounded-xl border border-white/40 bg-white/60 shadow-sm;
+    }
+    .dark .glass {
+        @apply border-white/10 bg-white/5;
+    }
+    .surface {
+        @apply rounded-xl bg-white shadow-sm;
+    }
+    .dark .surface {
+        @apply bg-neutral-950;
+    }
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
+@layer utilities {
+    /* Texte multi-ligne tronqué */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+    /* Squelettes de chargement */
+    .skeleton {
+        @apply animate-pulse rounded-md bg-slate-200;
+    }
+    .dark .skeleton {
+        @apply bg-slate-800;
+    }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+    /* Conteneurs */
+    .container-padded {
+        @apply container mx-auto px-4 sm:px-6 lg:px-8;
+    }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+    /* Focus visibilité */
+    .focus-ring {
+        @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    }
+    .dark .focus-ring {
+        @apply focus-visible:ring-offset-black;
+    }
 }
