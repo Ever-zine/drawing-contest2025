@@ -24,7 +24,52 @@ export default function HistoriquePage() {
   const [groups, setGroups] = useState<DayGroup[]>([]);
   const [selected, setSelected] = useState<DrawingWithRelations | null>(null);
 
-  // TODO : bouton télécharger
+  const [downloading, setDownloading] = useState(false);
+
+  // Génère un nom de fichier lisible
+  const getDownloadFilename = (d: DrawingWithRelations) => {
+    let ext = "jpg";
+    try {
+      const u = new URL(d.image_url);
+      const last = (u.pathname.split("/").pop() || "").toLowerCase();
+      const m = last.match(/\.([a-z0-9]+)$/i);
+      if (m) ext = m[1].toLowerCase();
+    } catch {
+      // ignore URL parsing errors
+    }
+    const baseTitle = (d.title || "dessin")
+      .replace(/[^\p{L}\p{N}\-_]+/gu, "_")
+      .slice(0, 60);
+    const datePart = d.theme?.date ? d.theme.date : toYMD(d.created_at);
+    return `${datePart}_${baseTitle}.${ext}`;
+  };
+
+  // Télécharge l'image en Blob (fallback: ouvre dans un nouvel onglet)
+  const downloadImage = async (d: DrawingWithRelations) => {
+    setDownloading(true);
+    try {
+      const res = await fetch(d.image_url, { mode: "cors" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = getDownloadFilename(d);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Téléchargement échoué:", e);
+      const a = document.createElement("a");
+      a.href = d.image_url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.click();
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     void fetchAllDrawings();
@@ -229,14 +274,25 @@ export default function HistoriquePage() {
                     {selected.theme?.title ? selected.theme.title : "Inconnu"}
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelected(null)}
-                  className="btn-ghost text-2xl"
-                  aria-label="Fermer"
-                  title="Fermer"
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => void downloadImage(selected)}
+                    className="btn btn-primary btn-sm"
+                    aria-label="Télécharger"
+                    title="Télécharger l'image"
+                    disabled={downloading}
+                  >
+                    {downloading ? "Téléchargement..." : "Télécharger"}
+                  </button>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="btn-ghost text-2xl"
+                    aria-label="Fermer"
+                    title="Fermer"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               <img

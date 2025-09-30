@@ -8,6 +8,7 @@ export default function Gallery() {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrawing, setSelectedDrawing] = useState<Drawing | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     fetchDrawings();
@@ -15,7 +16,23 @@ export default function Gallery() {
 
   const fetchDrawings = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      // On veut les dessins du jour précédent en UTC (entre minuit hier et minuit aujourd'hui)
+      const now = new Date();
+      const utcYear = now.getUTCFullYear();
+      const utcMonth = now.getUTCMonth();
+      const utcDate = now.getUTCDate();
+
+      // minuit aujourd'hui UTC
+      const todayMidnightUTC = new Date(
+        Date.UTC(utcYear, utcMonth, utcDate, 0, 0, 0),
+      );
+      // minuit hier UTC
+      const yesterdayMidnightUTC = new Date(
+        Date.UTC(utcYear, utcMonth, utcDate - 1, 0, 0, 0),
+      );
+
+      const todayISO = todayMidnightUTC.toISOString(); // "2025-10-01T00:00:00.000Z"
+      const yesterdayISO = yesterdayMidnightUTC.toISOString(); // "2025-09-30T00:00:00.000Z"
 
       const { data, error } = await supabase
         .from("drawings")
@@ -26,7 +43,8 @@ export default function Gallery() {
           theme:themes(title)
         `,
         )
-        .eq("theme.date", today)
+        .gte("created_at", yesterdayISO)
+        .lt("created_at", todayISO)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -41,23 +59,67 @@ export default function Gallery() {
     }
   };
 
-  const isContestEnded = new Date().getHours() >= 24;
+  // Téléchargement d'image
+  const getDownloadFilename = (d: Drawing) => {
+    let ext = "jpg";
+    try {
+      const u = new URL(d.image_url);
+      const last = (u.pathname.split("/").pop() || "").toLowerCase();
+      const m = last.match(/\.([a-z0-9]+)$/i);
+      if (m) ext = m[1].toLowerCase();
+    } catch {
+      // ignore
+    }
+    const baseTitle = (d.title || "dessin")
+      .replace(/[^\p{L}\p{N}\-_]+/gu, "_")
+      .slice(0, 60);
+    return `${baseTitle}.${ext}`;
+  };
 
-  if (!isContestEnded) {
-    return (
-      <div className="card card-hover p-6 mb-6">
-        <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-          Galerie des dessins
-        </h2>
-        <div className="alert alert-info">
-          <p className="font-medium">
-            🔒 La galerie sera visible après minuit, quand le concours sera
-            terminé !
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const downloadImage = async (d: Drawing) => {
+    setDownloading(true);
+    try {
+      const res = await fetch(d.image_url, { mode: "cors" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = getDownloadFilename(d);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Téléchargement échoué:", e);
+      const a = document.createElement("a");
+      a.href = d.image_url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.click();
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  // const isContestEnded = new Date().getHours() >= 24;
+
+  // if (!isContestEnded) {
+  //   return (
+  //     <div className="card card-hover p-6 mb-6">
+  //       <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+  //         Galerie des dessins
+  //       </h2>
+  //       <div className="alert alert-info">
+  //         <p className="font-medium">
+  //           🔒 La galerie sera visible après minuit, quand le concours
+  sera;
+  //           terminé !
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (loading) {
     return (
@@ -133,12 +195,23 @@ export default function Gallery() {
                 <h3 className="text-xl font-extrabold">
                   {selectedDrawing.title}
                 </h3>
-                <button
-                  onClick={() => setSelectedDrawing(null)}
-                  className="btn-ghost text-2xl"
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => downloadImage(selectedDrawing!)}
+                    className="btn btn-primary btn-sm"
+                    disabled={downloading}
+                    aria-label="Télécharger l'image"
+                    title="Télécharger l'image"
+                  >
+                    {downloading ? "Téléchargement..." : "Télécharger"}
+                  </button>
+                  <button
+                    onClick={() => setSelectedDrawing(null)}
+                    className="btn-ghost text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               <img
