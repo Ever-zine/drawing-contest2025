@@ -2,7 +2,6 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import Auth from "@/components/Auth";
-import Navigation from "@/components/Navigation";
 import DailyTheme from "@/components/DailyTheme";
 import DrawingUpload from "@/components/DrawingUpload";
 import Gallery from "@/components/Gallery";
@@ -45,8 +44,6 @@ export default function Home() {
 
   return (
     <div className="container-padded py-6 sm:py-8">
-      <Navigation />
-
       <div className="mt-6 sm:mt-8 space-y-6 sm:space-y-8">
         <DailyTheme />
         <DrawingUpload />

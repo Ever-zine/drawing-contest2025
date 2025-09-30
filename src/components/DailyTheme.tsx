@@ -17,7 +17,7 @@ export default function DailyTheme() {
 
   const fetchTodayTheme = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = new Date().toLocaleDateString("fr-CA"); // format YYYY-MM-DD
       const { data, error } = await supabase
         .from("themes")
         .select("*")

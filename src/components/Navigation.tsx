@@ -94,6 +94,9 @@ export default function Navigation() {
               Admin
             </Link>
           )}
+          <Link href="/" className="btn-ghost h-9 px-3">
+            Accueil
+          </Link>
           <Link href="/historique" className="btn-ghost h-9 px-3">
             Historique
           </Link>

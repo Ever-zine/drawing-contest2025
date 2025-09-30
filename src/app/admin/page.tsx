@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { Theme } from "@/lib/supabase";
-import Navigation from "@/components/Navigation";
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -167,8 +166,6 @@ export default function AdminPage() {
 
   return (
     <div className="container-padded py-6 sm:py-8">
-      <Navigation />
-
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl sm:text-3xl font-extrabold mb-6 sm:mb-8 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
           Administration - Gestion des thèmes
