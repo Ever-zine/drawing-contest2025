@@ -68,6 +68,9 @@ export default function Navigation() {
           <Link href="/admin" className="btn-ghost h-9">
             Admin
           </Link>
+          <Link href="/historique" className="btn-ghost h-9">
+            Historique
+          </Link>
 
           <div className="hidden sm:flex items-center gap-2 pl-2">
             <div className="h-8 w-8 rounded-full bg-violet-600 text-white grid place-items-center font-semibold">
