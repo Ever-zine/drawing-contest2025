@@ -111,12 +111,12 @@ export default function HistoriquePage() {
   );
 
   return (
-    <div className="container-padded py-8">
+    <div className="container-padded py-6 sm:py-8">
       <Navigation />
-      <div className="card card-hover p-6 mb-6">
-        <div className="flex items-start justify-between gap-4">
+      <div className="card card-hover p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold mb-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
               Historique des dessins
             </h1>
             <p className="text-slate-600 dark:text-slate-300">
@@ -135,12 +135,12 @@ export default function HistoriquePage() {
       {loading ? (
         <div className="space-y-6">
           {[...Array(3)].map((_, gi) => (
-            <div key={gi} className="card card-hover p-6">
+            <div key={gi} className="card card-hover p-4 sm:p-6">
               <div className="h-6 w-1/3 skeleton mb-4" />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {[...Array(6)].map((__, i) => (
                   <div key={i} className="space-y-2">
-                    <div className="skeleton h-48 rounded-lg mb-2"></div>
+                    <div className="skeleton h-40 sm:h-48 rounded-lg mb-2"></div>
                     <div className="skeleton h-4 w-3/4 mb-1"></div>
                     <div className="skeleton h-3 w-1/2"></div>
                   </div>
@@ -150,14 +150,14 @@ export default function HistoriquePage() {
           ))}
         </div>
       ) : errorMsg ? (
-        <div className="card card-hover p-6">
+        <div className="card card-hover p-4 sm:p-6">
           <div className="alert alert-error">
             <p className="font-medium">Erreur</p>
             <p className="text-sm">{errorMsg}</p>
           </div>
         </div>
       ) : groups.length === 0 ? (
-        <div className="card card-hover p-6">
+        <div className="card card-hover p-4 sm:p-6">
           <div className="text-center py-8">
             <div className="text-4xl mb-4">🗓️</div>
             <p className="text-slate-600 dark:text-slate-300">
@@ -166,11 +166,11 @@ export default function HistoriquePage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {groups.map((group) => (
-            <section key={group.date} className="card card-hover p-6">
+            <section key={group.date} className="card card-hover p-4 sm:p-6">
               <header className="mb-4">
-                <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">
+                <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100">
                   {formatFR(group.date)}{" "}
                   <span className="text-slate-500 dark:text-slate-400 font-normal">
                     — Thème:{" "}
@@ -179,7 +179,7 @@ export default function HistoriquePage() {
                 </h2>
               </header>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {group.drawings.map((drawing) => (
                   <div
                     key={drawing.id}
@@ -216,8 +216,8 @@ export default function HistoriquePage() {
 
       {selected && (
         <div className="modal-overlay flex items-center justify-center p-4">
-          <div className="modal-card max-w-2xl max-h-[90vh] overflow-auto">
-            <div className="p-6">
+          <div className="modal-card w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <div className="p-4 sm:p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-xl font-extrabold">{selected.title}</h3>
@@ -231,7 +231,7 @@ export default function HistoriquePage() {
                 </div>
                 <button
                   onClick={() => setSelected(null)}
-                  className="btn-ghost text-2xl"
+                  className="btn-ghost text-2xl h-10 w-10"
                   aria-label="Fermer"
                   title="Fermer"
                 >
@@ -242,7 +242,7 @@ export default function HistoriquePage() {
               <img
                 src={selected.image_url}
                 alt={selected.title}
-                className="w-full rounded-lg mb-4"
+                className="w-full max-h-[70vh] object-contain rounded-lg mb-4"
               />
 
               <div className="space-y-2">

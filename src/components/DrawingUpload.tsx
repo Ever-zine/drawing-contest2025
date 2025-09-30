@@ -98,12 +98,12 @@ export default function DrawingUpload() {
 
   if (isContestEnded) {
     return (
-      <div className="card card-hover p-6 mb-6">
-        <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+      <div className="card card-hover p-4 sm:p-6 mb-6">
+        <h2 className="text-lg sm:text-xl font-extrabold mb-3 sm:mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
           Upload de dessin
         </h2>
         <div className="alert alert-info">
-          <p className="text-gray-600">
+          <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base">
             {
               "⏰ Le concours est terminé pour aujourd'hui. Vous ne pouvez plus uploader de dessins."
             }
@@ -114,12 +114,12 @@ export default function DrawingUpload() {
   }
 
   return (
-    <div className="card card-hover p-6 mb-6">
-      <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+    <div className="card card-hover p-4 sm:p-6 mb-6">
+      <h2 className="text-lg sm:text-xl font-extrabold mb-3 sm:mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
         Upload de dessin
       </h2>
 
-      <div className="space-y-4">
+      <div className="space-y-4 sm:space-y-5">
         <div>
           <label
             htmlFor="title"
@@ -156,7 +156,7 @@ export default function DrawingUpload() {
 
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+          className={`border-2 border-dashed rounded-xl p-5 sm:p-8 text-center text-sm sm:text-base cursor-pointer transition-colors ${
             isDragActive
               ? "border-violet-400 bg-violet-50 dark:bg-white/5"
               : "border-slate-300 dark:border-slate-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-white/5"
@@ -165,21 +165,21 @@ export default function DrawingUpload() {
           <input {...getInputProps()} />
           {uploading ? (
             <div>
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mx-auto mb-2"></div>
+              <div className="animate-spin rounded-full h-7 w-7 sm:h-8 sm:w-8 border-b-2 border-violet-600 mx-auto mb-2"></div>
               <p className="text-slate-600 dark:text-slate-300">
                 Upload en cours...
               </p>
             </div>
           ) : (
             <div>
-              <div className="text-4xl mb-4">🎨</div>
+              <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">🎨</div>
               {isDragActive ? (
                 <p className="text-violet-600 dark:text-violet-300 font-medium">
                   Déposez votre image ici...
                 </p>
               ) : (
                 <div>
-                  <p className="text-slate-600 dark:text-slate-300 mb-2">
+                  <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base mb-2">
                     Glissez-déposez votre image ici, ou cliquez pour
                     sélectionner
                   </p>
@@ -194,7 +194,7 @@ export default function DrawingUpload() {
 
         {message && (
           <div
-            className={`mt-2 ${message.includes("Erreur") ? "alert alert-error" : "alert alert-success"}`}
+            className={`mt-2 sm:mt-3 ${message.includes("Erreur") ? "alert alert-error" : "alert alert-success"}`}
           >
             {message}
           </div>
