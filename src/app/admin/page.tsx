@@ -17,10 +17,42 @@ export default function AdminPage() {
     is_active: false,
   });
   const [message, setMessage] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
   useEffect(() => {
-    fetchThemes();
-  }, []);
+    const checkAdmin = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        setCheckingAdmin(false);
+        return;
+      }
+      setCheckingAdmin(true);
+      const { data, error } = await supabase
+        .from("users")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error(
+          "Erreur lors de la vérification des droits admin:",
+          error,
+        );
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(!!data?.is_admin);
+      }
+      setCheckingAdmin(false);
+    };
+    checkAdmin();
+  }, [user]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchThemes();
+    }
+  }, [isAdmin]);
 
   const fetchThemes = async () => {
     try {
@@ -102,7 +134,22 @@ export default function AdminPage() {
     }
   };
 
-  if (!user) {
+  if (user && checkingAdmin) {
+    return (
+      <div className="container-padded py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+            Vérification des droits...
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300">
+            Merci de patienter pendant la vérification de vos droits d’accès.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || (!checkingAdmin && !isAdmin)) {
     return (
       <div className="container-padded py-8">
         <div className="text-center">
@@ -110,7 +157,8 @@ export default function AdminPage() {
             Accès refusé
           </h1>
           <p className="text-slate-600 dark:text-slate-300">
-            Vous devez être connecté pour accéder à cette page.
+            Vous devez être connecté et avoir les droits administrateur pour
+            accéder à cette page.
           </p>
         </div>
       </div>

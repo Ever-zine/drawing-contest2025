@@ -3,10 +3,12 @@
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function Navigation() {
   const { user, signOut } = useAuth();
   const [isDark, setIsDark] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Theme init and toggle
   useEffect(() => {
@@ -31,6 +33,28 @@ export default function Navigation() {
       localStorage.setItem("theme", next ? "dark" : "light");
     } catch {}
   };
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("users")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Erreur vérification admin:", error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(!!data?.is_admin);
+      }
+    };
+    checkAdmin();
+  }, [user]);
 
   const initial = (user?.email?.[0] || "U").toUpperCase();
 
@@ -65,9 +89,11 @@ export default function Navigation() {
             {isDark ? "☀️" : "🌙"}
           </button>
 
-          <Link href="/admin" className="btn-ghost h-9">
-            Admin
-          </Link>
+          {isAdmin && (
+            <Link href="/admin" className="btn-ghost h-9">
+              Admin
+            </Link>
+          )}
           <Link href="/historique" className="btn-ghost h-9">
             Historique
           </Link>
