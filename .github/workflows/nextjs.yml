@@ -4,6 +4,12 @@
 #
 name: Deploy Next.js site to Pages
 
+env:
+  supabaseUrl: ${{ secrets.SUPABASE_URL }}
+  supabaseKey: ${{ secrets.SUPABASE_KEY }}
+  cloudinaryCloudName: ${{ secrets.CLOUDINARY_CLOUD_NAME}}
+  cloudinaryUploadPreset: ${{ secrets.CLOUDINARY_UPLOAD_PRESET}}
+
 on:
   # Runs on pushes targeting the default branch
   push:
