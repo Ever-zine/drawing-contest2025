@@ -10,6 +10,8 @@ export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState("");
 
+  // TODO : ajouter le user à la table user lors de la création du compte
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
