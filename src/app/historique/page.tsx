@@ -24,6 +24,8 @@ export default function HistoriquePage() {
   const [groups, setGroups] = useState<DayGroup[]>([]);
   const [selected, setSelected] = useState<DrawingWithRelations | null>(null);
 
+  // TODO : bouton télécharger
+
   useEffect(() => {
     void fetchAllDrawings();
   }, []);
