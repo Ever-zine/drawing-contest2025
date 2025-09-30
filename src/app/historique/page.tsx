@@ -37,10 +37,10 @@ export default function HistoriquePage() {
         .from("drawings")
         .select(
           `
-          *,
-          user:users(email),
-          theme:themes(title, date)
-        `,
+        *,
+        user:users(email),
+        theme:themes(title, date)
+      `,
         )
         .order("created_at", { ascending: false });
 
@@ -54,9 +54,18 @@ export default function HistoriquePage() {
 
       const drawings = (data || []) as DrawingWithRelations[];
 
+      // Filtrer : ne garder que les dessins strictement antérieurs à aujourd'hui.
+      // On utilise theme.date si présent, sinon la date de created_at.
+      const todayYMD = toYMD(new Date());
+      const filteredDrawings = drawings.filter((d) => {
+        const date =
+          (d.theme?.date as string | undefined) ?? toYMD(d.created_at);
+        return date < todayYMD;
+      });
+
       const byDate = new Map<string, DayGroup>();
 
-      for (const d of drawings) {
+      for (const d of filteredDrawings) {
         const normalizedDate =
           (d.theme?.date ?? toYMD(d.created_at)) || toYMD(d.created_at);
 
