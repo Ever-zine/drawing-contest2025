@@ -41,34 +41,34 @@ export default function Gallery() {
     }
   };
 
-  const isContestEnded = new Date().getHours() >= 24;
+  // const isContestEnded = new Date().getHours() >= 24;
 
-  if (!isContestEnded) {
-    return (
-      <div className="card card-hover p-6 mb-6">
-        <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-          Galerie des dessins
-        </h2>
-        <div className="alert alert-info">
-          <p className="font-medium">
-            🔒 La galerie sera visible après minuit, quand le concours sera
-            terminé !
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // if (!isContestEnded) {
+  //   return (
+  //     <div className="card card-hover p-6 mb-6">
+  //       <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+  //         Galerie des dessins
+  //       </h2>
+  //       <div className="alert alert-info">
+  //         <p className="font-medium">
+  //           🔒 La galerie sera visible après minuit, quand le concours sera
+  //           terminé !
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (loading) {
     return (
-      <div className="card card-hover p-6 mb-6">
-        <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+      <div className="card card-hover p-4 sm:p-6 mb-6">
+        <h2 className="text-lg sm:text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
           Galerie des dessins
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="space-y-2">
-              <div className="skeleton h-48 rounded-lg mb-2"></div>
+              <div className="skeleton h-40 sm:h-48 rounded-lg mb-2"></div>
               <div className="skeleton h-4 w-3/4 mb-1"></div>
               <div className="skeleton h-3 w-1/2"></div>
             </div>
@@ -79,8 +79,8 @@ export default function Gallery() {
   }
 
   return (
-    <div className="card card-hover p-6 mb-6">
-      <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+    <div className="card card-hover p-4 sm:p-6 mb-6">
+      <h2 className="text-lg sm:text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
         Galerie des dessins
       </h2>
 
@@ -92,7 +92,7 @@ export default function Gallery() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {drawings.map((drawing) => (
             <div
               key={drawing.id}
@@ -127,15 +127,15 @@ export default function Gallery() {
       {/* Modal pour voir le dessin en grand */}
       {selectedDrawing && (
         <div className="modal-overlay flex items-center justify-center p-4">
-          <div className="modal-card max-w-2xl max-h-[90vh] overflow-auto">
-            <div className="p-6">
+          <div className="modal-card w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <div className="p-4 sm:p-6">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-extrabold">
                   {selectedDrawing.title}
                 </h3>
                 <button
                   onClick={() => setSelectedDrawing(null)}
-                  className="btn-ghost text-2xl"
+                  className="btn-ghost text-2xl h-10 w-10"
                 >
                   ×
                 </button>
@@ -144,7 +144,7 @@ export default function Gallery() {
               <img
                 src={selectedDrawing.image_url}
                 alt={selectedDrawing.title}
-                className="w-full rounded-lg mb-4"
+                className="w-full max-h-[70vh] object-contain rounded-lg mb-4"
               />
 
               <div className="space-y-2">

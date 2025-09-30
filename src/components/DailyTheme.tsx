@@ -84,25 +84,25 @@ export default function DailyTheme() {
 
   return (
     <div className="card card-hover p-6 mb-6">
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4">
         <div>
-          <h2 className="text-2xl font-extrabold mb-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+          <h2 className="text-xl sm:text-2xl font-extrabold mb-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
             Thème du jour
           </h2>
-          <h3 className="text-xl font-semibold text-violet-600 dark:text-violet-300 mb-2">
+          <h3 className="text-lg sm:text-xl font-semibold text-violet-600 dark:text-violet-300 mb-2">
             {theme.title}
           </h3>
-          <p className="text-slate-600 dark:text-slate-300 mb-4">
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 mb-4">
             {theme.description}
           </p>
         </div>
 
-        <div className="text-right">
+        <div className="text-left sm:text-right mt-2 sm:mt-0">
           <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
             Temps restant
           </div>
           <div
-            className={`text-lg font-mono ${isContestEnded ? "text-emerald-600 dark:text-emerald-400" : "text-violet-700 dark:text-violet-300"}`}
+            className={`text-base sm:text-lg font-mono ${isContestEnded ? "text-emerald-600 dark:text-emerald-400" : "text-violet-700 dark:text-violet-300"}`}
           >
             {timeLeft}
           </div>

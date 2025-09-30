@@ -59,8 +59,8 @@ export default function Navigation() {
   const initial = (user?.email?.[0] || "U").toUpperCase();
 
   return (
-    <nav className="glass p-4 md:p-5 mb-8">
-      <div className="container-padded flex items-center justify-between">
+    <nav className="glass p-3 sm:p-4 md:p-5 mb-6 sm:mb-8">
+      <div className="container-padded flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white text-lg shadow-sm">
             🎨
@@ -77,7 +77,7 @@ export default function Navigation() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full sm:w-auto justify-start sm:justify-end">
           <button
             onClick={toggleTheme}
             className="btn-ghost h-9 px-3"
@@ -90,24 +90,24 @@ export default function Navigation() {
           </button>
 
           {isAdmin && (
-            <Link href="/admin" className="btn-ghost h-9">
+            <Link href="/admin" className="btn-ghost h-9 px-3">
               Admin
             </Link>
           )}
-          <Link href="/historique" className="btn-ghost h-9">
+          <Link href="/historique" className="btn-ghost h-9 px-3">
             Historique
           </Link>
 
-          <div className="hidden sm:flex items-center gap-2 pl-2">
+          <div className="flex items-center gap-2 pl-0 sm:pl-2">
             <div className="h-8 w-8 rounded-full bg-violet-600 text-white grid place-items-center font-semibold">
               {initial}
             </div>
-            <span className="text-sm text-slate-600 dark:text-slate-300">
+            <span className="hidden sm:inline text-sm text-slate-600 dark:text-slate-300">
               {user?.email}
             </span>
           </div>
 
-          <button onClick={signOut} className="btn-danger h-9">
+          <button onClick={signOut} className="btn-danger h-9 w-full sm:w-auto">
             Déconnexion
           </button>
         </div>

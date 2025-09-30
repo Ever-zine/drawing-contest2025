@@ -136,9 +136,9 @@ export default function AdminPage() {
 
   if (user && checkingAdmin) {
     return (
-      <div className="container-padded py-8">
+      <div className="container-padded py-6 sm:py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+          <h1 className="text-xl sm:text-2xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
             Vérification des droits...
           </h1>
           <p className="text-slate-600 dark:text-slate-300">
@@ -151,9 +151,9 @@ export default function AdminPage() {
 
   if (!user || (!checkingAdmin && !isAdmin)) {
     return (
-      <div className="container-padded py-8">
+      <div className="container-padded py-6 sm:py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+          <h1 className="text-xl sm:text-2xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
             Accès refusé
           </h1>
           <p className="text-slate-600 dark:text-slate-300">
@@ -166,22 +166,22 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="container-padded py-8">
+    <div className="container-padded py-6 sm:py-8">
       <Navigation />
 
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-extrabold mb-8 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-3xl font-extrabold mb-6 sm:mb-8 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
           Administration - Gestion des thèmes
         </h1>
 
         {/* Formulaire d'ajout */}
-        <div className="card card-hover p-6 mb-8">
-          <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+        <div className="card card-hover p-4 sm:p-6 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-extrabold mb-3 sm:mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
             Ajouter un nouveau thème
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label
                   htmlFor="title"
@@ -240,7 +240,7 @@ export default function AdminPage() {
               />
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center gap-2 flex-wrap">
               <input
                 id="is_active"
                 type="checkbox"
@@ -248,11 +248,11 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setNewTheme({ ...newTheme, is_active: e.target.checked })
                 }
-                className="h-4 w-4 text-violet-600 focus:ring-violet-500 border-slate-300 rounded"
+                className="h-5 w-5 text-violet-600 focus:ring-violet-500 border-slate-300 rounded"
               />
               <label
                 htmlFor="is_active"
-                className="ml-2 block text-sm text-slate-700 dark:text-slate-300"
+                className="ml-1 sm:ml-2 block text-sm text-slate-700 dark:text-slate-300"
               >
                 Actif (visible pour les utilisateurs)
               </label>
@@ -265,7 +265,7 @@ export default function AdminPage() {
 
           {message && (
             <div
-              className={`mt-4 ${message.includes("Erreur") ? "alert alert-error" : "alert alert-success"}`}
+              className={`mt-3 sm:mt-4 ${message.includes("Erreur") ? "alert alert-error" : "alert alert-success"}`}
             >
               {message}
             </div>
@@ -273,8 +273,8 @@ export default function AdminPage() {
         </div>
 
         {/* Liste des thèmes */}
-        <div className="card card-hover p-6">
-          <h2 className="text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+        <div className="card card-hover p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
             Thèmes existants
           </h2>
 
@@ -288,7 +288,7 @@ export default function AdminPage() {
             <div className="space-y-4">
               {themes.map((theme) => (
                 <div key={theme.id} className="card p-4">
-                  <div className="flex justify-between items-start">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <h3 className="font-semibold text-slate-800 dark:text-slate-100">
@@ -308,18 +308,18 @@ export default function AdminPage() {
                       </p>
                     </div>
 
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:items-start">
                       <button
                         onClick={() =>
                           toggleThemeStatus(theme.id, theme.is_active)
                         }
-                        className={`${theme.is_active ? "btn-warning" : "btn-success"} h-9 px-3 text-sm`}
+                        className={`${theme.is_active ? "btn-warning" : "btn-success"} h-9 px-3 text-sm w-full sm:w-auto`}
                       >
                         {theme.is_active ? "Désactiver" : "Activer"}
                       </button>
                       <button
                         onClick={() => deleteTheme(theme.id)}
-                        className="btn-danger h-9 px-3 text-sm"
+                        className="btn-danger h-9 px-3 text-sm w-full sm:w-auto"
                       >
                         Supprimer
                       </button>
