@@ -174,7 +174,7 @@ export default function DrawingUpload() {
     } finally {
       setUploading(false);
     }
-  }, [user, selectedFile, title, description, previewUrl]);
+  }, [user, selectedFile, title, description, previewUrl, todayThemeId]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -212,7 +212,7 @@ export default function DrawingUpload() {
           Envoi de dessin
         </h2>
         <div className="alert alert-warning">
-          <p className="text-sm">Vous avez déjà soumis un dessin pour le thème d'aujourd'hui. Vous ne pouvez plus en soumettre un autre.</p>
+          <p className="text-sm">Vous avez déjà soumis un dessin pour le thème d&apos;aujourd&apos;hui. Vous ne pouvez plus en soumettre un autre.</p>
         </div>
       </div>
     );
