@@ -7,6 +7,12 @@ import { Theme } from "@/lib/supabase";
 export default function DailyTheme() {
   const [theme, setTheme] = useState<Theme | null>(null);
   const [loading, setLoading] = useState(true);
+  const [participants, setParticipants] = useState<{
+    id: string;
+    name?: string | null;
+    email: string;
+    avatarUrl?: string | null;
+  }[]>([]);
   const [timeLeft, setTimeLeft] = useState("");
 
   // helper to get current hour in Europe/Paris timezone
@@ -17,7 +23,7 @@ export default function DailyTheme() {
         now.toLocaleString("en-GB", { timeZone: "Europe/Paris" })
       );
       return paris.getHours();
-    } catch (e) {
+    } catch {
       // fallback to local hour if timezone conversion fails
       return new Date().getHours();
     }
@@ -44,6 +50,46 @@ export default function DailyTheme() {
         console.error("Erreur lors du chargement du thème:", error);
       } else {
         setTheme(data);
+        // fetch participants (users who submitted a drawing for this theme)
+        try {
+          type DrawingsUsersRow = {
+            user_id: string;
+            user: { id: string; name?: string | null; email: string } | null;
+          };
+
+          const { data: drawingsUsers } = await supabase
+            .from("drawings")
+            .select(`user_id, user:users(id, name, email)`)
+            .eq("theme_id", data.id)
+            .order("created_at", { ascending: true });
+
+          if (drawingsUsers && Array.isArray(drawingsUsers)) {
+            // map unique users preserving order
+            const seen = new Set<string>();
+            const rows = drawingsUsers as unknown as DrawingsUsersRow[];
+            const users = rows
+              .map((d) => {
+                const raw = d.user as unknown;
+                // Supabase can return joined rows either as an object or as a one-element array
+                if (Array.isArray(raw)) return raw[0] ?? null;
+                return raw as (DrawingsUsersRow["user"] | null);
+              })
+              .filter((u): u is { id: string; name?: string | null; email: string } => {
+                if (!u) return false;
+                if (seen.has(u.id)) return false;
+                seen.add(u.id);
+                return true;
+              })
+              .map((u) => ({ id: u.id, name: u.name, email: u.email }));
+
+            setParticipants(users);
+          } else {
+            setParticipants([]);
+          }
+        } catch (fetchErr) {
+          console.error("Erreur fetch participants:", fetchErr);
+          setParticipants([]);
+        }
       }
     } catch (error) {
       console.error("Erreur:", error);
@@ -141,7 +187,23 @@ export default function DailyTheme() {
             {theme.description}
           </p>
         </div>
-
+        <div className="text-left sm:text-right mt-2 sm:mt-0">
+          <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Participants</div>
+          <div className="flex items-center justify-end gap-2">
+            <div className="flex -space-x-2">
+              {participants.slice(0, 5).map((p) => (
+                <div
+                  key={p.id}
+                  className="h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-900 bg-slate-200 dark:bg-slate-700 text-xs font-semibold grid place-items-center overflow-hidden"
+                  title={p.name || p.email}
+                >
+                  {p.name ? p.name[0].toUpperCase() : (p.email?.[0] || "U").toUpperCase()}
+                </div>
+              ))}
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-300">{participants.length} participant{participants.length > 1 ? 's' : ''}</div>
+          </div>
+        </div>
         <div className="text-left sm:text-right mt-2 sm:mt-0">
           <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
             Temps restant
