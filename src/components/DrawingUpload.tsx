@@ -13,6 +13,8 @@ export default function DrawingUpload() {
   const [message, setMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [hasSubmittedForTheme, setHasSubmittedForTheme] = useState<boolean>(false);
+  const [todayThemeId, setTodayThemeId] = useState<number | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -35,6 +37,49 @@ export default function DrawingUpload() {
     };
   }, [previewUrl]);
 
+  // check if user already submitted for today's active theme
+  useEffect(() => {
+    const checkSubmission = async () => {
+      if (!user) return;
+
+      const today = new Date().toISOString().split("T")[0];
+
+      // get today's active theme
+      const { data: themeData, error: themeError } = await supabase
+        .from("themes")
+        .select("id")
+        .eq("date", today)
+        .eq("is_active", true)
+        .single();
+
+      if (themeError || !themeData) {
+        setTodayThemeId(null);
+        setHasSubmittedForTheme(false);
+        return;
+      }
+
+      setTodayThemeId(themeData.id);
+
+      // check if user already has a drawing for this theme
+      const { data: drawingsData, error: drawingsError } = await supabase
+        .from("drawings")
+        .select("id")
+        .eq("theme_id", themeData.id)
+        .eq("user_id", user.id)
+        .limit(1)
+        .single();
+
+      if (drawingsError) {
+        // if not found, drawingsError will be present; treat as not submitted
+        setHasSubmittedForTheme(false);
+      } else {
+        setHasSubmittedForTheme(Boolean(drawingsData));
+      }
+    };
+
+    checkSubmission();
+  }, [user]);
+
   const handleUpload = useCallback(async () => {
     if (!user) {
       setMessage("Erreur: utilisateur non connecté");
@@ -44,6 +89,23 @@ export default function DrawingUpload() {
     if (!selectedFile) {
       setMessage("Erreur: aucun fichier sélectionné");
       return;
+    }
+
+    // re-check to prevent race: ensure user hasn't already submitted for this theme
+    if (todayThemeId) {
+      const { data: existing, error: existingError } = await supabase
+        .from("drawings")
+        .select("id")
+        .eq("theme_id", todayThemeId)
+        .eq("user_id", user.id)
+        .limit(1)
+        .single();
+
+      if (!existingError && existing) {
+        setHasSubmittedForTheme(true);
+        setMessage("Vous avez déjà soumis un dessin pour le thème d'aujourd'hui.");
+        return;
+      }
     }
 
     setUploading(true);
@@ -120,7 +182,7 @@ export default function DrawingUpload() {
       "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"],
     },
     maxFiles: 1,
-    disabled: uploading,
+    disabled: uploading || hasSubmittedForTheme,
   });
 
   const isContestEnded = new Date().getHours() >= 24;
@@ -129,7 +191,7 @@ export default function DrawingUpload() {
     return (
       <div className="card card-hover p-4 sm:p-6 mb-6">
         <h2 className="text-lg sm:text-xl font-extrabold mb-3 sm:mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-          Upload de dessin
+          Envoi de dessin
         </h2>
         <div className="alert alert-info">
           <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base">
@@ -137,6 +199,20 @@ export default function DrawingUpload() {
               "⏰ Le concours est terminé pour aujourd'hui. Vous ne pouvez plus uploader de dessins."
             }
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user already submitted for today's theme, show only the message
+  if (hasSubmittedForTheme) {
+    return (
+      <div className="card card-hover p-4 sm:p-6 mb-6">
+        <h2 className="text-lg sm:text-xl font-extrabold mb-3 sm:mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+          Envoi de dessin
+        </h2>
+        <div className="alert alert-warning">
+          <p className="text-sm">Vous avez déjà soumis un dessin pour le thème d'aujourd'hui. Vous ne pouvez plus en soumettre un autre.</p>
         </div>
       </div>
     );
@@ -196,7 +272,7 @@ export default function DrawingUpload() {
             <div>
               <div className="animate-spin rounded-full h-7 w-7 sm:h-8 sm:w-8 border-b-2 border-violet-600 mx-auto mb-2"></div>
               <p className="text-slate-600 dark:text-slate-300">
-                Upload en cours...
+                Envoi en cours...
               </p>
             </div>
           ) : (
@@ -240,7 +316,7 @@ export default function DrawingUpload() {
                 disabled={uploading}
                 className={`btn btn-primary ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {uploading ? 'Uploading...' : 'Upload'}
+                {uploading ? 'Envoi en cours...' : 'Envoyer'}
               </button>
 
               <button
@@ -256,7 +332,7 @@ export default function DrawingUpload() {
                 disabled={uploading}
                 className="btn btn-ghost"
               >
-                Remove
+                Supprimer
               </button>
             </div>
           )}
