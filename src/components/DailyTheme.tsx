@@ -20,7 +20,7 @@ export default function DailyTheme() {
       const today = new Date().toLocaleDateString("fr-CA"); // format YYYY-MM-DD
       const { data, error } = await supabase
         .from("themes")
-        .select("*")
+        .select("*, reference_images")
         .eq("date", today)
         .eq("is_active", true)
         .single();
@@ -95,6 +95,17 @@ export default function DailyTheme() {
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 mb-4">
             {theme.description}
           </p>
+          {theme.reference_images && theme.reference_images.length > 0 && (
+            <div className="mb-3">
+              <h4 className="text-sm font-semibold mb-2">Images de référence</h4>
+              <div className="flex gap-3 flex-wrap">
+                {theme.reference_images.map((img) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={img} src={img} alt="reference" className="h-20 w-20 object-cover rounded" />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="text-left sm:text-right mt-2 sm:mt-0">

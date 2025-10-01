@@ -14,6 +14,8 @@ export default function AdminPage() {
     description: "",
     date: "",
     is_active: false,
+    // hold selected reference image files before upload
+    referenceFiles: [] as File[],
   });
   const [message, setMessage] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -57,6 +59,7 @@ export default function AdminPage() {
     try {
       const { data, error } = await supabase
         .from("themes")
+        // include reference_images column
         .select("*")
         .order("date", { ascending: true });
 
@@ -77,18 +80,79 @@ export default function AdminPage() {
     setMessage("");
 
     try {
-      const { error } = await supabase.from("themes").insert([newTheme]);
+      // Upload reference files to Cloudinary first (if any)
+      let uploadedUrls: string[] = [];
+      const files: File[] = (newTheme as any).referenceFiles || [];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          { method: "POST", body: fd },
+        );
+
+        const json = await res.json();
+        if (!res.ok) throw new Error("Erreur upload image de référence");
+        uploadedUrls.push(json.secure_url);
+      }
+
+      const payload: any = {
+        title: newTheme.title,
+        description: newTheme.description,
+        date: newTheme.date,
+        is_active: newTheme.is_active,
+      };
+      if (uploadedUrls.length) payload.reference_images = uploadedUrls;
+
+      const { error } = await supabase.from("themes").insert([payload]);
 
       if (error) {
         throw error;
       }
 
       setMessage("✅ Thème ajouté avec succès !");
-      setNewTheme({ title: "", description: "", date: "", is_active: false });
+      setNewTheme({ title: "", description: "", date: "", is_active: false, referenceFiles: [] });
       fetchThemes();
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Une erreur est survenue";
+      setMessage(`Erreur: ${msg}`);
+    }
+  };
+
+  const handleReferenceFilesChange = (files: FileList | null) => {
+    if (!files) return;
+    setNewTheme({ ...newTheme, referenceFiles: Array.from(files) });
+  };
+
+  const removeReferenceImage = async (themeId: string, imageUrl: string) => {
+    if (!confirm("Supprimer cette image de référence ?")) return;
+
+    try {
+      // fetch existing images
+      const { data: existing, error: fetchError } = await supabase
+        .from("themes")
+        .select("reference_images")
+        .eq("id", themeId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const updated: string[] = (existing.reference_images || []).filter((u: string) => u !== imageUrl);
+
+      const { error: updateError } = await supabase
+        .from("themes")
+        .update({ reference_images: updated })
+        .eq("id", themeId);
+
+      if (updateError) throw updateError;
+
+      setMessage("Image de référence supprimée");
+      fetchThemes();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Une erreur est survenue";
       setMessage(`Erreur: ${msg}`);
     }
   };
@@ -255,6 +319,30 @@ export default function AdminPage() {
               </label>
             </div>
 
+            <div>
+              <label
+                htmlFor="reference_images"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+              >
+                Images de référence (optionnel)
+              </label>
+              <input
+                id="reference_images"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleReferenceFilesChange(e.target.files)}
+                className="block w-full"
+              />
+              {(newTheme as any).referenceFiles && (newTheme as any).referenceFiles.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(newTheme as any).referenceFiles.map((f: File, idx: number) => (
+                    <div key={idx} className="text-sm px-2 py-1 bg-slate-100 rounded">{f.name}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button type="submit" className="btn-primary w-full h-10">
               Ajouter le thème
             </button>
@@ -303,6 +391,24 @@ export default function AdminPage() {
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         Date: {new Date(theme.date).toLocaleDateString("fr-FR")}
                       </p>
+                      {/* Reference images display */}
+                      {theme.reference_images && theme.reference_images.length > 0 && (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {theme.reference_images.map((img) => (
+                            <div key={img} className="relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={img} alt="ref" className="h-16 w-16 object-cover rounded" />
+                              <button
+                                onClick={() => removeReferenceImage(theme.id, img)}
+                                className="absolute -top-2 -right-2 btn btn-sm btn-error"
+                                type="button"
+                              >
+                                x
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:items-start">

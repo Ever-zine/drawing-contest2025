@@ -15,6 +15,7 @@ export default function DrawingUpload() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [hasSubmittedForTheme, setHasSubmittedForTheme] = useState<boolean>(false);
   const [todayThemeId, setTodayThemeId] = useState<number | null>(null);
+  const [todayThemeRefs, setTodayThemeRefs] = useState<string[] | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -47,7 +48,7 @@ export default function DrawingUpload() {
       // get today's active theme
       const { data: themeData, error: themeError } = await supabase
         .from("themes")
-        .select("id")
+        .select("id, reference_images")
         .eq("date", today)
         .eq("is_active", true)
         .single();
@@ -55,10 +56,12 @@ export default function DrawingUpload() {
       if (themeError || !themeData) {
         setTodayThemeId(null);
         setHasSubmittedForTheme(false);
+        setTodayThemeRefs(null);
         return;
       }
 
       setTodayThemeId(themeData.id);
+      setTodayThemeRefs(themeData.reference_images || null);
 
       // check if user already has a drawing for this theme
       const { data: drawingsData, error: drawingsError } = await supabase
@@ -138,7 +141,7 @@ export default function DrawingUpload() {
       const today = new Date().toISOString().split("T")[0];
       const { data: themeData, error: themeError } = await supabase
         .from("themes")
-        .select("id")
+        .select("id, reference_images")
         .eq("date", today)
         .eq("is_active", true)
         .single();
@@ -223,6 +226,18 @@ export default function DrawingUpload() {
       <h2 className="text-lg sm:text-xl font-extrabold mb-3 sm:mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
         Upload de dessin
       </h2>
+
+      {todayThemeRefs && todayThemeRefs.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold mb-2">Images de référence</h3>
+          <div className="flex gap-3 flex-wrap">
+            {todayThemeRefs.map((img) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={img} src={img} alt="reference" className="h-24 w-24 object-cover rounded" />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4 sm:space-y-5">
         <div>

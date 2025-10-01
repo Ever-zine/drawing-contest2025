@@ -12,6 +12,8 @@ export interface Theme {
   description: string
   date: string
   is_active: boolean
+  // optional array of reference image URLs (stored as text[] in Supabase)
+  reference_images?: string[]
   created_at: string
 }
 
