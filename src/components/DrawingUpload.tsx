@@ -16,6 +16,19 @@ export default function DrawingUpload() {
   const [hasSubmittedForTheme, setHasSubmittedForTheme] = useState<boolean>(false);
   const [todayThemeId, setTodayThemeId] = useState<number | null>(null);
 
+  // helper to get current hour in Europe/Paris timezone
+  const getParisHour = () => {
+    try {
+      const now = new Date();
+      const paris = new Date(
+        now.toLocaleString("en-GB", { timeZone: "Europe/Paris" })
+      );
+      return paris.getHours();
+    } catch (e) {
+      return new Date().getHours();
+    }
+  };
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
@@ -186,6 +199,25 @@ export default function DrawingUpload() {
   });
 
   const isContestEnded = new Date().getHours() >= 24;
+
+  // Block uploads between 00:00 and 06:00 Paris time
+  const parisHour = getParisHour();
+  const isBlockedPeriod = parisHour >= 0 && parisHour < 6;
+
+  if (isBlockedPeriod) {
+    return (
+      <div className="card card-hover p-4 sm:p-6 mb-6">
+        <h2 className="text-lg sm:text-xl font-extrabold mb-3 sm:mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+          Envoi de dessin
+        </h2>
+        <div className="alert alert-info">
+          <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base">
+            {"Rendez-vous demain — les envois sont désactivés entre minuit et 6h (heure de Paris)."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isContestEnded) {
     return (

@@ -9,6 +9,20 @@ export default function DailyTheme() {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
 
+  // helper to get current hour in Europe/Paris timezone
+  const getParisHour = () => {
+    try {
+      const now = new Date();
+      const paris = new Date(
+        now.toLocaleString("en-GB", { timeZone: "Europe/Paris" })
+      );
+      return paris.getHours();
+    } catch (e) {
+      // fallback to local hour if timezone conversion fails
+      return new Date().getHours();
+    }
+  };
+
   useEffect(() => {
     fetchTodayTheme();
     const interval = setInterval(updateTimeLeft, 1000);
@@ -18,6 +32,7 @@ export default function DailyTheme() {
   const fetchTodayTheme = async () => {
     try {
       const today = new Date().toLocaleDateString("fr-CA"); // format YYYY-MM-DD
+      console.log(today);
       const { data, error } = await supabase
         .from("themes")
         .select("*")
@@ -68,6 +83,21 @@ export default function DailyTheme() {
   }
 
   if (!theme) {
+    // If current Paris hour is between 0 and 6, hide theme and show rendez-vous message
+    const parisHour = getParisHour();
+    if (parisHour >= 0 && parisHour < 6) {
+      return (
+        <div className="card card-hover p-6 mb-6">
+          <h2 className="text-xl font-extrabold mb-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+            Rendez-vous demain
+          </h2>
+          <p className="text-slate-600 dark:text-slate-300">
+            Rendez-vous demain 6h pour une nouveau thème !
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="card card-hover p-6 mb-6">
         <h2 className="text-xl font-extrabold mb-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
@@ -80,7 +110,22 @@ export default function DailyTheme() {
     );
   }
 
-  const isContestEnded = new Date().getHours() >= 24;
+  const parisHour = getParisHour();
+  const isContestEnded = false; // keep original contest end logic elsewhere
+
+  // If current Paris hour is between 0 and 6, show rendez-vous message instead of theme
+  if (parisHour >= 0 && parisHour < 6) {
+    return (
+      <div className="card card-hover p-6 mb-6">
+        <h2 className="text-xl font-extrabold mb-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+          Rendez-vous demain
+        </h2>
+        <p className="text-slate-600 dark:text-slate-300">
+          Rendez-vous demain 6h pour une nouveau thème !
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="card card-hover p-6 mb-6">
