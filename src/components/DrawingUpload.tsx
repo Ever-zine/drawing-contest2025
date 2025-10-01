@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,79 +11,108 @@ export default function DrawingUpload() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
-      if (!user) return;
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
 
-      const file = acceptedFiles[0];
-      if (!file) return;
+    setMessage("");
+    setSelectedFile(file);
 
-      setUploading(true);
-      setMessage("");
+    // create preview
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+  }, []);
 
-      try {
-        // Upload vers Cloudinary
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append(
-          "upload_preset",
-          process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
-        );
-
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-          {
-            method: "POST",
-            body: formData,
-          },
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error("Erreur lors de l'upload vers Cloudinary");
-        }
-
-        // Récupérer le thème du jour
-        const today = new Date().toISOString().split("T")[0];
-        const { data: themeData, error: themeError } = await supabase
-          .from("themes")
-          .select("id")
-          .eq("date", today)
-          .eq("is_active", true)
-          .single();
-
-        if (themeError) {
-          throw new Error("Aucun thème actif trouvé pour aujourd'hui");
-        }
-
-        // Sauvegarder dans Supabase
-        const { error: insertError } = await supabase.from("drawings").insert({
-          user_id: user.id,
-          theme_id: themeData.id,
-          image_url: data.secure_url,
-          title: title || "Sans titre",
-          description: description || null,
-        });
-
-        if (insertError) {
-          throw insertError;
-        }
-
-        setMessage("🎉 Votre dessin a été uploadé avec succès !");
-        setTitle("");
-        setDescription("");
-      } catch (err: unknown) {
-        const msg =
-          err instanceof Error ? err.message : "Une erreur est survenue";
-        setMessage(`Erreur: ${msg}`);
-      } finally {
-        setUploading(false);
+  useEffect(() => {
+    return () => {
+      // cleanup object URL on unmount
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
       }
-    },
-    [user, title, description],
-  );
+    };
+  }, [previewUrl]);
+
+  const handleUpload = useCallback(async () => {
+    if (!user) {
+      setMessage("Erreur: utilisateur non connecté");
+      return;
+    }
+
+    if (!selectedFile) {
+      setMessage("Erreur: aucun fichier sélectionné");
+      return;
+    }
+
+    setUploading(true);
+    setMessage("");
+
+    try {
+      // Upload vers Cloudinary
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
+      );
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de l'upload vers Cloudinary");
+      }
+
+      // Récupérer le thème du jour
+      const today = new Date().toISOString().split("T")[0];
+      const { data: themeData, error: themeError } = await supabase
+        .from("themes")
+        .select("id")
+        .eq("date", today)
+        .eq("is_active", true)
+        .single();
+
+      if (themeError) {
+        throw new Error("Aucun thème actif trouvé pour aujourd'hui");
+      }
+
+      // Sauvegarder dans Supabase
+      const { error: insertError } = await supabase.from("drawings").insert({
+        user_id: user.id,
+        theme_id: themeData.id,
+        image_url: data.secure_url,
+        title: title || "Sans titre",
+        description: description || null,
+      });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      setMessage("🎉 Votre dessin a été uploadé avec succès !");
+      setTitle("");
+      setDescription("");
+      setSelectedFile(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Une erreur est survenue";
+      setMessage(`Erreur: ${msg}`);
+    } finally {
+      setUploading(false);
+    }
+  }, [user, selectedFile, title, description, previewUrl]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -163,7 +192,7 @@ export default function DrawingUpload() {
           } ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <input {...getInputProps()} />
-          {uploading ? (
+            {uploading ? (
             <div>
               <div className="animate-spin rounded-full h-7 w-7 sm:h-8 sm:w-8 border-b-2 border-violet-600 mx-auto mb-2"></div>
               <p className="text-slate-600 dark:text-slate-300">
@@ -173,24 +202,64 @@ export default function DrawingUpload() {
           ) : (
             <div>
               <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">🎨</div>
-              {isDragActive ? (
+                {isDragActive ? (
                 <p className="text-violet-600 dark:text-violet-300 font-medium">
                   Déposez votre image ici...
                 </p>
               ) : (
                 <div>
-                  <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base mb-2">
-                    Glissez-déposez votre image ici, ou cliquez pour
-                    sélectionner
-                  </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Formats acceptés: JPEG, PNG, GIF, WebP
-                  </p>
+                    <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base mb-2">
+                      Glissez-déposez votre image ici, ou cliquez pour
+                      sélectionner
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Formats acceptés: JPEG, PNG, GIF, WebP
+                    </p>
+                    {selectedFile && (
+                      <div className="mt-3 flex items-center justify-center space-x-3">
+                        {previewUrl ? (
+                          // image preview
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={previewUrl} alt="preview" className="h-20 w-20 object-cover rounded" />
+                        ) : (
+                          <div className="text-sm text-slate-600">{selectedFile.name}</div>
+                        )}
+                      </div>
+                    )}
                 </div>
               )}
             </div>
           )}
         </div>
+
+          {selectedFile && (
+            <div className="flex items-center justify-center space-x-3 mt-3">
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={uploading}
+                className={`btn btn-primary ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {uploading ? 'Uploading...' : 'Upload'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFile(null);
+                  if (previewUrl) {
+                    URL.revokeObjectURL(previewUrl);
+                    setPreviewUrl(null);
+                  }
+                  setMessage('');
+                }}
+                disabled={uploading}
+                className="btn btn-ghost"
+              >
+                Remove
+              </button>
+            </div>
+          )}
 
         {message && (
           <div
