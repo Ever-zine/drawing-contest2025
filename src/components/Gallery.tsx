@@ -8,6 +8,7 @@ export default function Gallery() {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrawing, setSelectedDrawing] = useState<Drawing | null>(null);
+  const [themeTitle, setThemeTitle] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDrawings();
@@ -15,25 +16,41 @@ export default function Gallery() {
 
   const fetchDrawings = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const ymd = d.toLocaleDateString("fr-CA");
 
-      const { data, error } = await supabase
-        .from("drawings")
-        .select(
-          `
-          *,
-          user:users(email, name),
-          theme:themes(title)
-        `,
-        )
-        .eq("theme.date", today)
-        .order("created_at", { ascending: false });
+const { data: theme, error: themeError } = await supabase
+  .from("themes")
+  .select("id, title, date")
+  .eq("date", ymd)
+  .single();
 
-      if (error) {
-        console.error("Erreur lors du chargement des dessins:", error);
-      } else {
-        setDrawings(data || []);
-      }
+if (themeError || !theme) {
+  setThemeTitle(null);
+  setDrawings([]);
+  return;
+}
+
+setThemeTitle(theme.title ?? null);
+
+const { data: drawingsData, error: drawingsError } = await supabase
+  .from("drawings")
+  .select(
+    `
+    *,
+    user:users(email, name),
+    theme:themes(title)
+  `,
+  )
+  .eq("theme_id", theme.id)
+  .order("created_at", { ascending: false });
+
+if (drawingsError) {
+  console.error("Erreur lors du chargement des dessins:", drawingsError);
+} else {
+  setDrawings(drawingsData || []);
+}
     } catch (error) {
       console.error("Erreur:", error);
     } finally {
@@ -81,14 +98,14 @@ export default function Gallery() {
   return (
     <div className="card card-hover p-4 sm:p-6 mb-6">
       <h2 className="text-lg sm:text-xl font-extrabold mb-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-        Galerie des dessins
+        Galerie des dessins — Thème: {themeTitle ?? "Inconnu"}
       </h2>
 
       {drawings.length === 0 ? (
         <div className="text-center py-8">
           <div className="text-4xl mb-4">🎨</div>
           <p className="text-slate-600 dark:text-slate-300">
-            Aucun dessin n&apos;a été soumis pour aujourd&apos;hui.
+            Aucun dessin n&apos;a été soumis pour hier.
           </p>
         </div>
       ) : (
