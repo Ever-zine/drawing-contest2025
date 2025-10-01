@@ -8,7 +8,35 @@ export default function Gallery() {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrawing, setSelectedDrawing] = useState<Drawing | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
   const [themeTitle, setThemeTitle] = useState<string | null>(null);
+
+  // Télécharge une image à partir de l'objet Drawing
+  async function downloadImage(drawing: Drawing) {
+    try {
+      setDownloading(drawing.id);
+      const res = await fetch(drawing.image_url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const safeTitle = (drawing.title || "dessin").replace(/[^a-z0-9-_\.]/gi, "_");
+      const extMatch = (drawing.image_url || "").match(/\.([a-zA-Z0-9]{2,5})(?:\?|$)/);
+      const ext = extMatch ? extMatch[1] : blob.type.split("/").pop() || "png";
+      a.href = url;
+      a.download = `${safeTitle}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Erreur de téléchargement:", err);
+      // Optionally: show toast/alert
+    } finally {
+      setDownloading(null);
+    }
+  }
 
   useEffect(() => {
     fetchDrawings();
@@ -113,15 +141,22 @@ if (drawingsError) {
           {drawings.map((drawing) => (
             <div
               key={drawing.id}
-              className="card card-hover overflow-hidden cursor-pointer"
-              onClick={() => setSelectedDrawing(drawing)}
+              className="card card-hover overflow-hidden"
             >
               <div className="aspect-square relative overflow-hidden">
                 <img
                   src={drawing.image_url}
                   alt={drawing.title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-200 cursor-pointer"
+                  onClick={() => setSelectedDrawing(drawing)}
                 />
+                <button
+                  onClick={() => downloadImage(drawing)}
+                  className="absolute top-2 right-2 btn btn-xs"
+                  title="Télécharger"
+                >
+                  ⬇️
+                </button>
               </div>
               <div className="p-4">
                 <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">
@@ -150,12 +185,23 @@ if (drawingsError) {
                 <h3 className="text-xl font-extrabold">
                   {selectedDrawing.title}
                 </h3>
-                <button
-                  onClick={() => setSelectedDrawing(null)}
-                  className="btn-ghost text-2xl h-10 w-10"
-                >
-                  ×
-                </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => downloadImage(selectedDrawing)}
+                        className="btn btn-sm"
+                        disabled={!!downloading}
+                        title="Télécharger"
+                      >
+                        {downloading === selectedDrawing.id ? "Téléchargement..." : "Télécharger"}
+                      </button>
+                      <button
+                        onClick={() => setSelectedDrawing(null)}
+                        className="btn-ghost text-2xl h-10 w-10"
+                        title="Fermer"
+                      >
+                        ×
+                      </button>
+                    </div>
               </div>
 
               <img

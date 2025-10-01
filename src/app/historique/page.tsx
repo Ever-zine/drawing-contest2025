@@ -22,6 +22,7 @@ export default function HistoriquePage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [groups, setGroups] = useState<DayGroup[]>([]);
   const [selected, setSelected] = useState<DrawingWithRelations | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchAllDrawings();
@@ -100,6 +101,32 @@ export default function HistoriquePage() {
     [groups],
   );
 
+  // Télécharge une image donnée et nomme le fichier de façon lisible
+  async function downloadImage(drawing: { id: string; image_url: string; title?: string | null }) {
+    try {
+      setDownloadingId(drawing.id);
+      const res = await fetch(drawing.image_url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const safeTitle = (drawing.title || "dessin").replace(/[^a-z0-9-_\.]/gi, "_");
+      const extMatch = (drawing.image_url || "").match(/\.([a-zA-Z0-9]{2,5})(?:\?|$)/);
+      const ext = extMatch ? extMatch[1] : blob.type.split("/").pop() || "png";
+      a.href = url;
+      a.download = `${safeTitle}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Erreur de téléchargement:", err);
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
   return (
     <div className="container-padded py-8">
       <div className="card card-hover p-6 mb-6">
@@ -170,17 +197,24 @@ export default function HistoriquePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {group.drawings.map((drawing) => (
-                  <div
-                    key={drawing.id}
-                    className="card card-hover overflow-hidden cursor-pointer"
-                    onClick={() => setSelected(drawing)}
-                  >
+                  <div key={drawing.id} className="card card-hover overflow-hidden">
                     <div className="aspect-square relative overflow-hidden">
                       <img
                         src={drawing.image_url}
                         alt={drawing.title}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200 cursor-pointer"
+                        onClick={() => setSelected(drawing)}
                       />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void downloadImage(drawing);
+                        }}
+                        className="absolute top-2 right-2 btn btn-xs"
+                        title="Télécharger"
+                      >
+                        ⬇️
+                      </button>
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">
@@ -218,14 +252,26 @@ export default function HistoriquePage() {
                     {selected.theme?.title ? selected.theme.title : "Inconnu"}
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelected(null)}
-                  className="btn-ghost text-2xl"
-                  aria-label="Fermer"
-                  title="Fermer"
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!selected) return;
+                      await downloadImage(selected);
+                    }}
+                    className="btn btn-sm"
+                    disabled={!!downloadingId}
+                  >
+                    {downloadingId === selected?.id ? "Téléchargement..." : "Télécharger"}
+                  </button>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="btn-ghost text-2xl"
+                    aria-label="Fermer"
+                    title="Fermer"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               <img
