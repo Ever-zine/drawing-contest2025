@@ -1,6 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import type { EmojiClickData } from "emoji-picker-react";
+
+// dynamic import to reduce initial bundle size; picker will be loaded only when opened
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
+  ssr: false,
+  loading: () => (
+    <div className="p-4 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-600" />
+    </div>
+  ),
+});
 import { supabase, Reaction } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -15,7 +27,12 @@ function aggregate(reactions: Reaction[]) {
     const e = r.emoji;
     const list = map.get(e) ?? { emoji: e, count: 0, users: [] };
     list.count++;
-    if (r.user_id) list.users.push(r.user_id);
+    // Prefer readable name/email when available
+    if (r.user && (r.user.name || r.user.email)) {
+      list.users.push(r.user.name ?? r.user.email ?? r.user.id);
+    } else if (r.user_id) {
+      list.users.push(r.user_id);
+    }
     map.set(e, list);
   }
   return Array.from(map.values()).sort((a, b) => b.count - a.count);
@@ -80,6 +97,13 @@ export default function Reactions({ drawingId }: Props) {
 
   const setMyReaction = async (emoji: string) => {
     if (!user) return;
+    // compute current myReaction from latest state to avoid stale closure
+    const currentMyReaction = reactions.find((r) => r.user_id === user.id);
+    // if user already has the same reaction, treat as toggle => remove
+    if (currentMyReaction && currentMyReaction.emoji === emoji) {
+      await removeMyReaction();
+      return;
+    }
     setSubmitting(true);
     try {
       // Upsert: si l'utilisateur a déjà une réaction, on met à jour; sinon on insert
@@ -127,44 +151,44 @@ export default function Reactions({ drawingId }: Props) {
   // nicer picker: popover toggle with grid and custom input
   const palette = ["❤️", "👍", "😂", "🔥", "👏", "😮", "🎉", "🤩", "😢", "🤝", "🌟", "💯"];
   const [openPicker, setOpenPicker] = useState(false);
-  const [customEmoji, setCustomEmoji] = useState("");
+  const [clickedEmoji, setClickedEmoji] = useState<string | null>(null);
 
   return (
     <div className="mt-3">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3 flex-wrap">
-          {aggregated.map((a) => (
-            <button key={a.emoji} className={`px-2 py-1 rounded-md border flex items-center gap-2 ${myReaction && myReaction.emoji === a.emoji ? 'bg-violet-100 dark:bg-violet-800' : 'bg-white dark:bg-slate-800'}`} onClick={() => setMyReaction(a.emoji)} disabled={submitting}>
-              <span className="text-lg">{a.emoji}</span>
-              <span className="text-sm text-slate-600 dark:text-slate-300">{a.count}</span>
-            </button>
-          ))}
+          {aggregated.map((a) => {
+            const displayNames = a.users.slice(0, 5).join(", ");
+            const more = a.count > a.users.length ? a.count - a.users.length : 0;
+            const title = more > 0 ? `${displayNames}, +${more} autres` : displayNames;
+            return (
+              <button
+                key={a.emoji}
+                title={title}
+                className={`px-2 py-1 rounded-md border flex items-center gap-2 transition-transform duration-150 ${myReaction && myReaction.emoji === a.emoji ? 'bg-violet-100 dark:bg-violet-800' : 'bg-white dark:bg-slate-800'} ${clickedEmoji === a.emoji ? 'scale-110' : ''}`}
+                onClick={() => {
+                  // trigger small animation
+                  setClickedEmoji(a.emoji);
+                  setTimeout(() => setClickedEmoji(null), 220);
+                  void setMyReaction(a.emoji);
+                }}
+                disabled={submitting}
+              >
+                <span className="text-lg">{a.emoji}</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">{a.count}</span>
+              </button>
+            );
+          })}
 
-          <button className="px-2 py-1 rounded-md border bg-white dark:bg-slate-800" onClick={() => setOpenPicker((s) => !s)} aria-expanded={openPicker}>
-            {myReaction ? <span className="text-lg">{myReaction.emoji}</span> : <span className="text-lg">➕</span>} <span className="ml-2 text-sm">Réagir</span>
+          <button className="px-2 py-1 rounded-md border bg-white dark:bg-slate-800 flex items-center gap-2" onClick={() => setOpenPicker((s) => !s)} aria-expanded={openPicker}>
+            <span className="text-lg">➕</span>
+            <span className="ml-2 text-sm">Réagir</span>
           </button>
-
-          {user && myReaction && (
-            <button className="btn btn-ghost btn-sm ml-2" onClick={removeMyReaction} disabled={submitting}>
-              Supprimer ma réaction
-            </button>
-          )}
         </div>
 
         {openPicker && (
-          <div className="mt-2 p-3 border rounded-lg bg-white dark:bg-slate-900 shadow-sm w-full max-w-md">
-            <div className="grid grid-cols-6 gap-2">
-              {palette.map((e) => (
-                <button key={e} className={`p-2 text-2xl rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 ${myReaction && myReaction.emoji === e ? 'ring-2 ring-violet-400' : ''}`} onClick={() => { setMyReaction(e); setOpenPicker(false); }}>
-                  {e}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3 flex items-center gap-2">
-              <input value={customEmoji} onChange={(e) => setCustomEmoji(e.target.value)} placeholder="Emoji personnalisé (colle ici)" className="input flex-1" />
-              <button className="btn btn-primary" onClick={() => { if (customEmoji.trim()) { setMyReaction(customEmoji.trim()); setCustomEmoji(""); setOpenPicker(false); } }} disabled={submitting}>Ajouter</button>
-            </div>
+          <div>
+            <EmojiPicker onEmojiClick={(data: EmojiClickData) => { setMyReaction(data.emoji); setOpenPicker(false); }} searchPlaceholder="Rechercher" />
           </div>
         )}
 
