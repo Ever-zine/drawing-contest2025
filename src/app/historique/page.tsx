@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Drawing } from "@/lib/supabase";
-import DrawingModal from "@/components/DrawingModal";
+import Link from "next/link";
 import ReactionPreview from "@/components/ReactionPreview";
 
 type DrawingWithRelations = Drawing & {
@@ -23,7 +23,7 @@ export default function HistoriquePage() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [groups, setGroups] = useState<DayGroup[]>([]);
-  const [selected, setSelected] = useState<DrawingWithRelations | null>(null);
+  // removed modal state: we navigate to the dedicated drawing page instead
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -201,12 +201,13 @@ export default function HistoriquePage() {
                 {group.drawings.map((drawing) => (
                   <div key={drawing.id} className="card card-hover overflow-hidden">
                     <div className="aspect-square relative overflow-hidden">
-                      <img
-                        src={drawing.image_url}
-                        alt={drawing.title}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200 cursor-pointer"
-                        onClick={() => setSelected(drawing)}
-                      />
+                        <Link href={`/drawing/${drawing.id}`} className="block w-full h-full">
+                          <img
+                            src={drawing.image_url}
+                            alt={drawing.title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200 cursor-pointer"
+                          />
+                        </Link>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -240,17 +241,7 @@ export default function HistoriquePage() {
         </div>
       )}
 
-      {selected && (
-        <DrawingModal
-          drawing={selected as Drawing}
-          theme={selected.theme ?? null}
-          onClose={() => setSelected(null)}
-          onDownload={async (d) => {
-            await downloadImage(d);
-          }}
-          downloadingId={downloadingId}
-        />
-      )}
+      {/* Clicking a drawing now opens the dedicated page */}
     </div>
   );
 }

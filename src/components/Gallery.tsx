@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Drawing } from "@/lib/supabase";
 import Comments from "@/components/Comments";
-import DrawingModal from "@/components/DrawingModal";
+import Link from "next/link";
 import ReactionPreview from "@/components/ReactionPreview";
 
 export default function Gallery() {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDrawing, setSelectedDrawing] = useState<Drawing | null>(null);
+  // no modal selected drawing anymore - we navigate to a dedicated page
   const [downloading, setDownloading] = useState<string | null>(null);
   const [themeTitle, setThemeTitle] = useState<string | null>(null);
 
@@ -147,12 +147,13 @@ export default function Gallery() {
               className="card card-hover overflow-hidden"
             >
               <div className="aspect-square relative overflow-hidden">
-                <img
-                  src={drawing.image_url}
-                  alt={drawing.title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-200 cursor-pointer"
-                  onClick={() => setSelectedDrawing(drawing)}
-                />
+                <Link href={`/drawing/${drawing.id}`} className="block w-full h-full">
+                  <img
+                    src={drawing.image_url}
+                    alt={drawing.title}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-200 cursor-pointer"
+                  />
+                </Link>
                 <button
                   onClick={() => downloadImage(drawing)}
                   className="absolute top-2 right-2 btn btn-xs"
@@ -180,16 +181,7 @@ export default function Gallery() {
         </div>
       )}
 
-      {/* Modal pour voir le dessin en grand */}
-      {selectedDrawing && (
-        <DrawingModal
-          drawing={selectedDrawing}
-          theme={themeTitle ? { title: themeTitle } : null}
-          onClose={() => setSelectedDrawing(null)}
-          onDownload={(d) => downloadImage(d)}
-          downloadingId={downloading}
-        />
-      )}
+      {/* Thumbnails now link to the dedicated drawing page */}
     </div>
   );
 }
