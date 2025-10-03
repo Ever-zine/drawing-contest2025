@@ -3,10 +3,11 @@ import { supabase } from '@/lib/supabase'
 import type { Drawing } from '@/lib/supabase'
 import DrawingPage from '@/components/DrawingPage'
 
-type Props = { params: { id: string } }
 
-export default async function Page({ params }: Props) {
-  const { id } = params
+export default async function Page({ params }: { params?: Promise<{ id: string }> }) {
+  const paramsObj = params ? await params : undefined
+  if (!paramsObj?.id) return notFound()
+  const { id } = paramsObj
 
   const { data, error } = await supabase
     .from('drawings')
