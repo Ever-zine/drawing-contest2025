@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Comments from '@/components/Comments'
 import Reactions from '@/components/Reactions'
 import type { Drawing } from '@/lib/supabase'
@@ -10,6 +10,13 @@ type Props = {
 }
 
 export default function DrawingPage({ drawing }: Props) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    // small entrance animation
+    const t = setTimeout(() => setMounted(true), 10)
+    return () => clearTimeout(t)
+  }, [])
   async function downloadImage() {
     try {
       const res = await fetch(drawing.image_url)
@@ -33,7 +40,7 @@ export default function DrawingPage({ drawing }: Props) {
   }
 
   return (
-    <div className="card card-hover p-4 md:p-6">
+  <div className={`card card-hover p-4 md:p-6 transform transition-all duration-300 ease-out ${mounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
         <aside className="md:col-span-3">
           <div className="sticky top-20">
