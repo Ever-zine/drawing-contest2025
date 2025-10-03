@@ -2,6 +2,7 @@
 
 import React from "react";
 import Comments from "@/components/Comments";
+import Reactions from "@/components/Reactions";
 import type { Drawing } from "@/lib/supabase";
 
 type ThemeInfo = {
@@ -54,6 +55,8 @@ export default function DrawingModal({ drawing, onClose, onDownload, downloading
             alt={drawing.title}
             className="w-full rounded-lg mb-4"
           />
+
+          <Reactions drawingId={drawing.id} />
 
           <div className="space-y-2">
             <p className="text-sm text-slate-600 dark:text-slate-300">

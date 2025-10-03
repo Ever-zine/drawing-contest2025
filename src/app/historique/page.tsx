@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Drawing } from "@/lib/supabase";
 import DrawingModal from "@/components/DrawingModal";
+import ReactionPreview from "@/components/ReactionPreview";
 
 type DrawingWithRelations = Drawing & {
   theme?: {
@@ -229,6 +230,7 @@ export default function HistoriquePage() {
                           {drawing.description}
                         </p>
                       )}
+                      <ReactionPreview drawingId={drawing.id} />
                     </div>
                   </div>
                 ))}
