@@ -29,6 +29,19 @@ export interface Drawing {
   }
 }
 
+export interface Comment {
+  id: string
+  drawing_id: string
+  user_id?: string | null
+  content: string
+  created_at: string
+  user?: {
+    id: string
+    email: string
+    name?: string | null
+  } | null
+}
+
 export interface User {
   id: string
   email: string
