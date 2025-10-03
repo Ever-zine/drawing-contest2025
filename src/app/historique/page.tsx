@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Drawing } from "@/lib/supabase";
+import DrawingModal from "@/components/DrawingModal";
 
 type DrawingWithRelations = Drawing & {
   theme?: {
@@ -189,7 +190,7 @@ export default function HistoriquePage() {
                 <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">
                   {formatFR(group.date)}{" "}
                   <span className="text-slate-500 dark:text-slate-400 font-normal">
-                    — Thème:{" "}
+                    — Thème: {" "}
                     {group.themeTitle ? group.themeTitle : "Thème inconnu"}
                   </span>
                 </h2>
@@ -238,73 +239,15 @@ export default function HistoriquePage() {
       )}
 
       {selected && (
-        <div className="modal-overlay flex items-center justify-center p-4">
-          <div className="modal-card max-w-2xl max-h-[90vh] overflow-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-extrabold">{selected.title}</h3>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">
-                    {selected.theme?.date
-                      ? `${formatFR(selected.theme.date)} — `
-                      : ""}
-                    Thème:{" "}
-                    {selected.theme?.title ? selected.theme.title : "Inconnu"}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={async () => {
-                      if (!selected) return;
-                      await downloadImage(selected);
-                    }}
-                    className="btn btn-sm"
-                    disabled={!!downloadingId}
-                  >
-                    {downloadingId === selected?.id ? "Téléchargement..." : "Télécharger"}
-                  </button>
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="btn-ghost text-2xl"
-                    aria-label="Fermer"
-                    title="Fermer"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-
-              <img
-                src={selected.image_url}
-                alt={selected.title}
-                className="w-full rounded-lg mb-4"
-              />
-
-              <div className="space-y-2">
-                <p className="text-sm text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">Artiste:</span>{" "}
-                  {selected.user?.name || selected.user?.email}
-                </p>
-                {selected.description && (
-                  <p className="text-slate-700 dark:text-slate-200">
-                    <span className="font-medium">Description:</span>{" "}
-                    {selected.description}
-                  </p>
-                )}
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Soumis le{" "}
-                  {new Date(selected.created_at).toLocaleDateString("fr-FR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DrawingModal
+          drawing={selected as Drawing}
+          theme={selected.theme ?? null}
+          onClose={() => setSelected(null)}
+          onDownload={async (d) => {
+            await downloadImage(d);
+          }}
+          downloadingId={downloadingId}
+        />
       )}
     </div>
   );

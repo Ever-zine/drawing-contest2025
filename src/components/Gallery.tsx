@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Drawing } from "@/lib/supabase";
+import Comments from "@/components/Comments";
+import DrawingModal from "@/components/DrawingModal";
 
 export default function Gallery() {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
@@ -48,37 +50,37 @@ export default function Gallery() {
       d.setDate(d.getDate() - 1);
       const ymd = d.toLocaleDateString("fr-CA");
 
-const { data: theme, error: themeError } = await supabase
-  .from("themes")
-  .select("id, title, date")
-  .eq("date", ymd)
-  .single();
+      const { data: theme, error: themeError } = await supabase
+        .from("themes")
+        .select("id, title, date")
+        .eq("date", ymd)
+        .single();
 
-if (themeError || !theme) {
-  setThemeTitle(null);
-  setDrawings([]);
-  return;
-}
+      if (themeError || !theme) {
+        setThemeTitle(null);
+        setDrawings([]);
+        return;
+      }
 
-setThemeTitle(theme.title ?? null);
+      setThemeTitle(theme.title ?? null);
 
-const { data: drawingsData, error: drawingsError } = await supabase
-  .from("drawings")
-  .select(
-    `
+      const { data: drawingsData, error: drawingsError } = await supabase
+        .from("drawings")
+        .select(
+          `
     *,
     user:users(email, name),
     theme:themes(title)
   `,
-  )
-  .eq("theme_id", theme.id)
-  .order("created_at", { ascending: false });
+        )
+        .eq("theme_id", theme.id)
+        .order("created_at", { ascending: false });
 
-if (drawingsError) {
-  console.error("Erreur lors du chargement des dessins:", drawingsError);
-} else {
-  setDrawings(drawingsData || []);
-}
+      if (drawingsError) {
+        console.error("Erreur lors du chargement des dessins:", drawingsError);
+      } else {
+        setDrawings(drawingsData || []);
+      }
     } catch (error) {
       console.error("Erreur:", error);
     } finally {
@@ -178,59 +180,13 @@ if (drawingsError) {
 
       {/* Modal pour voir le dessin en grand */}
       {selectedDrawing && (
-        <div className="modal-overlay flex items-center justify-center p-4">
-          <div className="modal-card w-full max-w-2xl max-h-[90vh] overflow-auto">
-            <div className="p-4 sm:p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-extrabold">
-                  {selectedDrawing.title}
-                </h3>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => downloadImage(selectedDrawing)}
-                        className="btn btn-sm"
-                        disabled={!!downloading}
-                        title="Télécharger"
-                      >
-                        {downloading === selectedDrawing.id ? "Téléchargement..." : "Télécharger"}
-                      </button>
-                      <button
-                        onClick={() => setSelectedDrawing(null)}
-                        className="btn-ghost text-2xl h-10 w-10"
-                        title="Fermer"
-                      >
-                        ×
-                      </button>
-                    </div>
-              </div>
-
-              <img
-                src={selectedDrawing.image_url}
-                alt={selectedDrawing.title}
-                className="w-full max-h-[70vh] object-contain rounded-lg mb-4"
-              />
-
-              <div className="space-y-2">
-                <p className="text-sm text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">Artiste:</span>{" "}
-                  {selectedDrawing.user?.name || selectedDrawing.user?.email}
-                </p>
-                {selectedDrawing.description && (
-                  <p className="text-slate-700 dark:text-slate-200">
-                    <span className="font-medium">Description:</span>{" "}
-                    {selectedDrawing.description}
-                  </p>
-                )}
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Soumis le{" "}
-                  {new Date(selectedDrawing.created_at).toLocaleDateString(
-                    "fr-FR",
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DrawingModal
+          drawing={selectedDrawing}
+          theme={themeTitle ? { title: themeTitle } : null}
+          onClose={() => setSelectedDrawing(null)}
+          onDownload={(d) => downloadImage(d)}
+          downloadingId={downloading}
+        />
       )}
     </div>
   );
