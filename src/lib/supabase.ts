@@ -42,6 +42,19 @@ export interface Comment {
   } | null
 }
 
+export interface Reaction {
+  id: string
+  drawing_id: string
+  user_id: string
+  emoji: string
+  created_at: string
+  user?: {
+    id: string
+    email: string
+    name?: string | null
+  } | null
+}
+
 export interface User {
   id: string
   email: string

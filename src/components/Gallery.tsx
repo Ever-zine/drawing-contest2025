@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Drawing } from "@/lib/supabase";
 import Comments from "@/components/Comments";
 import DrawingModal from "@/components/DrawingModal";
+import ReactionPreview from "@/components/ReactionPreview";
 
 export default function Gallery() {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
@@ -172,6 +173,7 @@ export default function Gallery() {
                     {drawing.description}
                   </p>
                 )}
+                <ReactionPreview drawingId={drawing.id} />
               </div>
             </div>
           ))}
