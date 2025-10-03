@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase, Comment } from "@/lib/supabase";
+import { supabase, Comment, CommentLike } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
 type Props = {
@@ -14,6 +14,9 @@ export default function Comments({ drawingId }: Props) {
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [likes, setLikes] = useState<CommentLike[]>([]);
+  const [likesLoading, setLikesLoading] = useState(true);
+  const [likeSubmittingId, setLikeSubmittingId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -45,6 +48,30 @@ export default function Comments({ drawingId }: Props) {
 
     // subscribe to realtime changes for this drawing's comments
     const channel = supabase.channel(`comments:drawing=${drawingId}`);
+    const fetchLikes = async () => {
+      setLikesLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("comment_likes")
+          .select(`*, user:users(id, name, email)`)
+          .eq("drawing_id", drawingId)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          console.error("Erreur chargement likes:", error);
+          setLikes([]);
+        } else {
+          if (mounted) setLikes((data as CommentLike[]) || []);
+        }
+      } catch (e) {
+        console.error(e);
+        setLikes([]);
+      } finally {
+        if (mounted) setLikesLoading(false);
+      }
+    };
+
+    fetchLikes();
 
     channel
       .on(
@@ -73,10 +100,31 @@ export default function Comments({ drawingId }: Props) {
       )
       .subscribe();
 
+    // subscribe to comment_likes realtime
+    const likesChannel = supabase.channel(`comment_likes:drawing=${drawingId}`);
+    likesChannel
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "comment_likes", filter: `drawing_id=eq.${drawingId}` },
+        (payload) => {
+          setLikes((prev) => [...prev, payload.new as CommentLike]);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "comment_likes", filter: `drawing_id=eq.${drawingId}` },
+        (payload) => {
+          const oldRow = payload.old as CommentLike;
+          setLikes((prev) => prev.filter((l) => l.id !== oldRow.id));
+        },
+      )
+      .subscribe();
+
     return () => {
       mounted = false;
-      // unsubscribe channel
+      // unsubscribe channels
       supabase.removeChannel(channel);
+      supabase.removeChannel(likesChannel);
     };
   }, [drawingId]);
 
@@ -166,6 +214,31 @@ export default function Comments({ drawingId }: Props) {
     }
   };
 
+  const toggleLike = async (commentId: string) => {
+    if (!user) return;
+    setLikeSubmittingId(commentId);
+    try {
+      const existing = likes.find((l) => l.comment_id === commentId && l.user_id === user.id);
+      if (existing) {
+        const { error } = await supabase.from("comment_likes").delete().eq("id", existing.id).limit(1);
+        if (error) throw error;
+        setLikes((prev) => prev.filter((l) => l.id !== existing.id));
+      } else {
+        const { data, error } = await supabase
+          .from("comment_likes")
+          .insert({ comment_id: commentId, drawing_id: drawingId, user_id: user.id })
+          .select(`*, user:users(id, name, email)`)
+          .single();
+        if (error) throw error;
+        setLikes((prev) => [...prev, (data as CommentLike)]);
+      }
+    } catch (err) {
+      console.error("Erreur toggle like:", err);
+    } finally {
+      setLikeSubmittingId(null);
+    }
+  };
+
   return (
     <div className="mt-4">
       <h4 className="font-semibold mb-2">Commentaires</h4>
@@ -191,6 +264,17 @@ export default function Comments({ drawingId }: Props) {
                     )}
                   </div>
                   <div className="text-xs text-slate-400">{new Date(c.created_at).toLocaleString()}</div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <button
+                      className={`btn btn-xs btn-ghost px-2 py-1 ${likes.find((l) => l.comment_id === c.id && l.user_id === user?.id) ? 'text-violet-600' : ''}`}
+                      onClick={() => void toggleLike(c.id)}
+                      disabled={!user || likeSubmittingId === c.id}
+                      title={user ? 'Like / Unlike' : 'Connectez-vous pour liker'}
+                    >
+                      ❤️
+                    </button>
+                    <div className="text-xs text-slate-500">{likes.filter((l) => l.comment_id === c.id).length}</div>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
