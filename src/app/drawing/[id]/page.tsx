@@ -27,3 +27,10 @@ export default async function Page({ params }: { params?: Promise<{ id: string }
     </div>
   )
 }
+
+export async function generateStaticParams() {
+  const { data, error } = await supabase.from('drawings').select('id')
+  if (error || !data) return []
+
+  return data.map((d: { id: string }) => ({ id: d.id }))
+}
