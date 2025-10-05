@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Drawing } from '@/lib/supabase'
 import DrawingPage from '@/components/DrawingPage'
+import DrawingClientLoader from '@/components/DrawingClientLoader'
 
 
 export default async function Page({ params }: { params?: Promise<{ id: string }> }) {
@@ -9,6 +10,7 @@ export default async function Page({ params }: { params?: Promise<{ id: string }
   if (!paramsObj?.id) return notFound()
   const { id } = paramsObj
 
+  // Try server-side fetch to render statically/SSR when available
   const { data, error } = await supabase
     .from('drawings')
     .select(`*, user:users(email, name), theme:themes(title, date)`)
@@ -16,7 +18,11 @@ export default async function Page({ params }: { params?: Promise<{ id: string }
     .single()
 
   if (error || !data) {
-    return notFound()
+    // If the drawing wasn't available at build time (or server fetch failed),
+    // render a client-side loader that will fetch the drawing directly.
+    // This allows static hosting (GitHub Pages) to still display newly added drawings
+    // without requiring a full rebuild.
+    return <DrawingClientLoader id={id} />
   }
 
   const drawing = data as Drawing & { theme?: { title?: string | null; date?: string | null } }
