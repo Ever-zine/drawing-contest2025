@@ -3,22 +3,18 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Drawing } from "@/lib/supabase";
-import Comments from "@/components/Comments";
-import Link from "next/link";
-import ReactionPreview from "@/components/ReactionPreview";
 import DrawingCard from "@/components/DrawingCard";
 
 export default function Gallery() {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(true);
   // no modal selected drawing anymore - we navigate to a dedicated page
-  const [downloading, setDownloading] = useState<string | null>(null);
+  // downloading state removed: not used
   const [themeTitle, setThemeTitle] = useState<string | null>(null);
 
   // Télécharge une image à partir de l'objet Drawing
   async function downloadImage(drawing: Drawing) {
     try {
-      setDownloading(drawing.id);
       const res = await fetch(drawing.image_url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
@@ -34,11 +30,10 @@ export default function Gallery() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("Erreur de téléchargement:", err);
       // Optionally: show toast/alert
     } finally {
-      setDownloading(null);
+      // no downloading state to reset
     }
   }
 
@@ -143,11 +138,7 @@ export default function Gallery() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {drawings.map((drawing) => (
-            <DrawingCard
-              key={drawing.id}
-              drawing={drawing}
-              onDownload={(d) => void downloadImage(d as any)}
-            />
+            <DrawingCard key={drawing.id} drawing={drawing} onDownload={(d) => void downloadImage(d)} />
           ))}
         </div>
       )}

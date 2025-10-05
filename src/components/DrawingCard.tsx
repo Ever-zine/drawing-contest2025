@@ -7,9 +7,9 @@ import type { Drawing } from "@/lib/supabase";
 import ReactionPreview from "@/components/ReactionPreview";
 
 type Props = {
-  drawing: Drawing | { id: string; image_url: string; title?: string | null; description?: string | null; user?: { name?: string | null; email?: string | null } };
+  drawing: Drawing;
   className?: string;
-  onDownload?: (drawing: { id: string; image_url: string; title?: string | null }) => void;
+  onDownload?: (drawing: Drawing) => void;
 };
 
 export default function DrawingCard({ drawing, className = "", onDownload }: Props) {
@@ -59,7 +59,7 @@ export default function DrawingCard({ drawing, className = "", onDownload }: Pro
         <button
           onClick={(e) => {
             e.stopPropagation();
-            if (onDownload) onDownload({ id: drawing.id, image_url: drawing.image_url, title: drawing.title });
+            if (onDownload) onDownload(drawing);
           }}
           className="absolute top-2 right-2 btn btn-xs"
           title="Télécharger"
