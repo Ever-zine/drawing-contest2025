@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import type { Drawing } from "@/lib/supabase";
 import Link from "next/link";
 import ReactionPreview from "@/components/ReactionPreview";
+import DrawingCard from "@/components/DrawingCard";
 
 type DrawingWithRelations = Drawing & {
   theme?: {
@@ -199,41 +200,11 @@ export default function HistoriquePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {group.drawings.map((drawing) => (
-                  <div key={drawing.id} className="card card-hover overflow-hidden">
-                    <div className="aspect-square relative overflow-hidden">
-                        <Link href={`/drawing/${drawing.id}`} className="block w-full h-full">
-                          <img
-                            src={drawing.image_url}
-                            alt={drawing.title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200 cursor-pointer"
-                          />
-                        </Link>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void downloadImage(drawing);
-                        }}
-                        className="absolute top-2 right-2 btn btn-xs"
-                        title="Télécharger"
-                      >
-                        ⬇️
-                      </button>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">
-                        {drawing.title}
-                      </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                        par {drawing.user?.name || drawing.user?.email}
-                      </p>
-                      {drawing.description && (
-                        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
-                          {drawing.description}
-                        </p>
-                      )}
-                      <ReactionPreview drawingId={drawing.id} />
-                    </div>
-                  </div>
+                  <DrawingCard
+                    key={drawing.id}
+                    drawing={drawing}
+                    onDownload={(d) => void downloadImage(d)}
+                  />
                 ))}
               </div>
             </section>
