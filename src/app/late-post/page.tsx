@@ -9,8 +9,8 @@ export default function LatePostPage() {
     <div className="container-padded">
       <div className="py-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-extrabold text-red-700">C'EST TROP TARD</h1>
-          <p className="text-red-600">Tu peux toujours poster en retard, mais sache que c'est mal. Vraiment mal.</p>
+          <h1 className="text-3xl font-extrabold text-red-700">C&apos;EST TROP TARD</h1>
+          <p className="text-red-600">Tu peux toujours poster en retard, mais sache que c&apos;est mal. Vraiment mal.</p>
         </div>
 
         <LatePostUpload />

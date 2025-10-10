@@ -49,7 +49,8 @@ export default function LatePostUpload() {
           .in("theme_id", themeIds)
           .eq("user_id", user.id);
 
-        const submittedThemeIds = new Set<string>((userDrawings || []).map((d: any) => String(d.theme_id)));
+        const userDrawingsArr = (userDrawings || []) as Array<{ theme_id?: string | null }>;
+        const submittedThemeIds = new Set<string>(userDrawingsArr.map((d) => String(d.theme_id)));
 
         const filtered = (themesData as ThemeOption[]).filter((t) => !submittedThemeIds.has(String(t.id)));
 
@@ -154,7 +155,7 @@ export default function LatePostUpload() {
 
       if (insertError) throw insertError;
 
-      setMessage("Votre dessin en retard a bien été publié. (C'est mal, mais c'est fait)");
+      setMessage("Votre dessin en retard a bien été publié. (C&apos;est mal, mais c&apos;est fait)");
       setSelectedFile(null);
       setPreviewUrl(null);
       setTitle("");
@@ -175,7 +176,7 @@ export default function LatePostUpload() {
     <div className="card card-hover p-4 sm:p-6 mb-6 border-2 border-red-600 bg-red-50 dark:bg-red-900/20">
       <h2 className="text-lg sm:text-xl font-extrabold mb-3 sm:mb-4 text-red-700">POSTER EN RETARD</h2>
       <p className="text-sm text-red-600 mb-3">
-        Ce n'est pas bien de poster après la deadline. Si tu insistes, choisis un thème ci-dessous.
+        Ce n&apos;est pas bien de poster après la deadline. Si tu insistes, choisis un thème ci-dessous.
       </p>
 
       <div className="space-y-4">
@@ -206,7 +207,7 @@ export default function LatePostUpload() {
               </>
             )}
           </select>
-          <p className="text-xs text-red-600 mt-1">Seuls les thèmes pour lesquels vous n'avez pas déjà soumis un dessin sont affichés.</p>
+          <p className="text-xs text-red-600 mt-1">Seuls les thèmes pour lesquels vous n&apos;avez pas déjà soumis un dessin sont affichés.</p>
         </div>
 
         <div>
@@ -236,7 +237,7 @@ export default function LatePostUpload() {
             </div>
           ) : (
             <div>
-              <p className="text-sm text-red-700">Glissez-déposez l'image ici, ou cliquez pour sélectionner.</p>
+              <p className="text-sm text-red-700">Glissez-déposez l&apos;image ici, ou cliquez pour sélectionner.</p>
               <p className="text-xs text-red-600">Formats: JPEG, PNG, GIF, WebP</p>
             </div>
           )}

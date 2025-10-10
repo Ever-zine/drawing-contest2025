@@ -54,7 +54,6 @@ export default function DrawingPage({ drawing }: Props) {
       a.remove()
       URL.revokeObjectURL(url)
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Erreur de téléchargement:', err)
     }
   }
@@ -71,7 +70,7 @@ export default function DrawingPage({ drawing }: Props) {
                 {isLate && (
                   <div className="mt-2 inline-block bg-red-700 text-white px-4 py-2 rounded font-extrabold animate-shake">
                     <span className="mr-2">😡</span>
-                    <span>POSTÉ EN RETARD — VOUS N'AVEZ PAS RESPECTÉ LES RÈGLES. CE N'EST PAS ACCEPTABLE.</span>
+                    <span>POSTÉ EN RETARD — VOUS N&apos;AVEZ PAS RESPECTÉ LES RÈGLES. CE N&apos;EST PAS ACCEPTABLE.</span>
                   </div>
                 )}
               </div>
@@ -93,6 +92,7 @@ export default function DrawingPage({ drawing }: Props) {
 
         <main className="md:col-span-9">
           <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden mb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={drawing.image_url} alt={drawing.title} className="w-full h-auto object-contain max-h-[80vh] block mx-auto" />
           </div>
 
