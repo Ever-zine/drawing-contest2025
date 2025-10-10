@@ -12,6 +12,26 @@ type Props = {
 export default function DrawingPage({ drawing }: Props) {
   const [mounted, setMounted] = useState(false)
 
+  const ymd = (dateInput: string | number | Date) => {
+    const d = new Date(dateInput);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const isLate = (() => {
+    try {
+      const themeDate = drawing.theme?.date;
+      if (!themeDate) return false;
+  const createdYMD = ymd(drawing.created_at);
+  const themeYMD = ymd(themeDate);
+  return createdYMD > themeYMD;
+    } catch {
+      return false;
+    }
+  })();
+
   useEffect(() => {
     // small entrance animation
     const t = setTimeout(() => setMounted(true), 10)
@@ -48,6 +68,12 @@ export default function DrawingPage({ drawing }: Props) {
               <div>
                 <h1 className="text-lg font-extrabold">{drawing.title}</h1>
                 <div className="text-sm text-slate-500 dark:text-slate-400">Thème: {drawing.theme?.title ?? 'Inconnu'}</div>
+                {isLate && (
+                  <div className="mt-2 inline-block bg-red-700 text-white px-4 py-2 rounded font-extrabold animate-shake">
+                    <span className="mr-2">😡</span>
+                    <span>POSTÉ EN RETARD — VOUS N'AVEZ PAS RESPECTÉ LES RÈGLES. CE N'EST PAS ACCEPTABLE.</span>
+                  </div>
+                )}
               </div>
             </div>
 

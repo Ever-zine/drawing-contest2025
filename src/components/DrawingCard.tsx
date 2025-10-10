@@ -7,13 +7,34 @@ import type { Drawing } from "@/lib/supabase";
 import ReactionPreview from "@/components/ReactionPreview";
 
 type Props = {
-  drawing: Drawing;
+  drawing: Drawing & { theme?: { date?: string | null } | null };
   className?: string;
   onDownload?: (drawing: Drawing) => void;
 };
 
 export default function DrawingCard({ drawing, className = "", onDownload }: Props) {
   const [commentsCount, setCommentsCount] = useState<number | null>(null);
+
+  const ymd = (dateInput: string | number | Date) => {
+    const d = new Date(dateInput);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const isLate = (() => {
+    try {
+      const themeDate = drawing.theme?.date;
+      if (!themeDate) return false;
+  const createdYMD = ymd(drawing.created_at);
+  const themeYMD = ymd(themeDate);
+  // Compare date-only strings (YYYY-MM-DD). If created date > theme date -> late
+  return createdYMD > themeYMD;
+    } catch {
+      return false;
+    }
+  })();
 
   useEffect(() => {
     let mounted = true;
@@ -46,8 +67,14 @@ export default function DrawingCard({ drawing, className = "", onDownload }: Pro
   }, [drawing.id]);
 
   return (
-    <div className={`card card-hover overflow-hidden ${className}`}>
+    <div className={`card card-hover overflow-hidden ${className} ${isLate ? 'ring-2 ring-red-500 animate-pulse-red' : ''}`}>
       <div className="aspect-square relative overflow-hidden">
+        {isLate && (
+          <div className="absolute top-2 left-2 bg-red-700 text-white px-3 py-1 rounded text-xs font-extrabold flex items-center gap-2 z-10 animate-shake">
+            <span>😡</span>
+            <span>EN RETARD — C'EST INADMISSIBLE !</span>
+          </div>
+        )}
         <Link href={`/drawing/${drawing.id}`} className="block w-full h-full">
           <img
             src={drawing.image_url}

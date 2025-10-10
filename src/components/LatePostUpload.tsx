@@ -5,12 +5,13 @@ import { useDropzone } from "react-dropzone";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
-type ThemeOption = { id: number; title: string; date: string };
+type ThemeOption = { id: string; title: string; date: string };
 
 export default function LatePostUpload() {
   const { user } = useAuth();
   const [themes, setThemes] = useState<ThemeOption[]>([]);
-  const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null);
+  const [loadingThemes, setLoadingThemes] = useState(true);
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -22,12 +23,16 @@ export default function LatePostUpload() {
     // fetch past themes that are not active (or all themes) and that the user hasn't submitted for
     const fetchThemes = async () => {
       if (!user) return;
+      setLoadingThemes(true);
 
       try {
-        // get recent themes (limit 30) ordered desc by date
+        // get recent themes (limit 30) ordered desc by date — only inactive (past) themes and not future dates
+        const today = new Date().toLocaleDateString("fr-CA");
         const { data: themesData, error: themesError } = await supabase
           .from("themes")
-          .select("id,title,date")
+          .select("id,title,date,is_active")
+          .eq("is_active", true)
+          .lte("date", today)
           .order("date", { ascending: false })
           .limit(30);
 
@@ -36,35 +41,40 @@ export default function LatePostUpload() {
           return;
         }
 
-        // filter out themes where user already has a drawing
-        const filtered: ThemeOption[] = [];
+        // fetch all drawings by the user for those theme ids in one query (optimization)
+        const themeIds = (themesData as ThemeOption[]).map((t) => t.id);
+        const { data: userDrawings } = await supabase
+          .from("drawings")
+          .select("theme_id")
+          .in("theme_id", themeIds)
+          .eq("user_id", user.id);
 
-        for (const t of themesData as ThemeOption[]) {
-          const { data: existing, error: existingError } = await supabase
-            .from("drawings")
-            .select("id")
-            .eq("theme_id", t.id)
-            .eq("user_id", user.id)
-            .limit(1)
-            .single();
+        const submittedThemeIds = new Set<string>((userDrawings || []).map((d: any) => String(d.theme_id)));
 
-          if (existingError) {
-            // not found -> allow
-            filtered.push(t);
-          } else if (!existing) {
-            filtered.push(t);
-          }
-        }
+        const filtered = (themesData as ThemeOption[]).filter((t) => !submittedThemeIds.has(String(t.id)));
 
         setThemes(filtered);
+
+        // preserve current selection if still present, otherwise clear it (use functional update to avoid stale closure)
+        setSelectedThemeId((prev) => {
+          if (prev === null) return prev;
+          return filtered.some((t) => String(t.id) === prev) ? prev : null;
+        });
       } catch (err) {
         console.error("Erreur fetching themes:", err);
         setThemes([]);
+      } finally {
+        setLoadingThemes(false);
       }
     };
 
+    console.debug("LatePostUpload: starting fetchThemes");
     fetchThemes();
   }, [user]);
+
+  useEffect(() => {
+    console.debug("LatePostUpload: selectedThemeId changed ->", selectedThemeId);
+  }, [selectedThemeId]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -172,16 +182,29 @@ export default function LatePostUpload() {
         <div>
           <label className="block text-sm font-medium text-red-700 mb-1">Choisir un thème</label>
           <select
-            value={selectedThemeId ?? ""}
-            onChange={(e) => setSelectedThemeId(e.target.value ? Number(e.target.value) : null)}
+            value={selectedThemeId === null ? "" : String(selectedThemeId)}
+            onChange={(e) => {
+              const v = e.target.value;
+              console.debug("LatePostUpload: select onChange raw value=", v);
+              const final = v || null;
+              console.debug("LatePostUpload: parsed selection=", final);
+              setSelectedThemeId(final);
+            }}
             className="input"
+            disabled={loadingThemes}
           >
-            <option value="">-- Choisir un thème --</option>
-            {themes.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.date} — {t.title}
-              </option>
-            ))}
+            {loadingThemes ? (
+              <option value="">Chargement...</option>
+            ) : (
+              <>
+                <option value="">-- Choisir un thème --</option>
+                {themes.map((t) => (
+                  <option key={t.id} value={String(t.id)}>
+                    {t.date} — {t.title}
+                  </option>
+                ))}
+              </>
+            )}
           </select>
           <p className="text-xs text-red-600 mt-1">Seuls les thèmes pour lesquels vous n'avez pas déjà soumis un dessin sont affichés.</p>
         </div>
