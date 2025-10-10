@@ -9,13 +9,15 @@ import DrawingCard from "@/components/DrawingCard";
 
 type DrawingWithRelations = Drawing & {
   theme?: {
+    id?: string | null;
     title?: string | null;
     date?: string | null;
   } | null;
 };
 
 type DayGroup = {
-  date: string; // YYYY-MM-DD
+  key: string; // theme.id or fallback date key
+  date: string; // YYYY-MM-DD (theme.date or fallback)
   themeTitle: string | null;
   drawings: DrawingWithRelations[];
 };
@@ -37,17 +39,42 @@ export default function HistoriquePage() {
 
     try {
       const today = new Date().toLocaleDateString("fr-CA");
-      const { data, error } = await supabase
+
+      // Find today's active theme (if any) so we can exclude drawings attached to that theme
+      let excludeThemeId: string | null = null;
+      try {
+        const { data: themeToday, error: themeErr } = await supabase
+          .from("themes")
+          .select("id")
+          .eq("date", today)
+          .eq("is_active", true)
+          .single();
+        if (!themeErr && themeToday) {
+          excludeThemeId = themeToday.id as string;
+        }
+      } catch (e) {
+        // ignore, we'll just not exclude anything
+        // eslint-disable-next-line no-console
+        console.debug("Historique: impossible de déterminer le thème du jour", e);
+      }
+
+      // Fetch drawings, excluding those attached to today's theme (if found)
+      let query = supabase
         .from("drawings")
         .select(
           `
           *,
           user:users(email, name),
-          theme:themes(title, date)
+          theme:themes(id, title, date)
         `,
         )
-        .lt("created_at", today)
         .order("created_at", { ascending: false });
+
+      if (excludeThemeId) {
+        query = query.neq("theme_id", excludeThemeId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         setErrorMsg("Impossible de charger l'historique des dessins.");
@@ -59,34 +86,40 @@ export default function HistoriquePage() {
 
       const drawings = (data || []) as DrawingWithRelations[];
 
-      const byDate = new Map<string, DayGroup>();
+      // Group by theme.id when present, fallback to date-based key when no theme
+      const byKey = new Map<string, DayGroup>();
 
       for (const d of drawings) {
-        const normalizedDate =
-          (d.theme?.date ?? toYMD(d.created_at)) || toYMD(d.created_at);
-
+        const themeId = d.theme?.id ?? null;
+        const key = themeId ?? toYMD(d.created_at);
+        const groupDate = d.theme?.date ?? toYMD(d.created_at);
         const themeTitle = d.theme?.title ?? null;
 
-        if (!byDate.has(normalizedDate)) {
-          byDate.set(normalizedDate, {
-            date: normalizedDate,
+        if (!byKey.has(key)) {
+          byKey.set(key, {
+            key,
+            date: groupDate,
             themeTitle,
             drawings: [d],
           });
         } else {
-          const group = byDate.get(normalizedDate)!;
+          const group = byKey.get(key)!;
           group.drawings.push(d);
-          // Conserver un titre si on le découvre plus tard
+          // Preserve title if discovered later
           if (!group.themeTitle && themeTitle) {
             group.themeTitle = themeTitle;
           }
+          // keep the earliest/best date if missing
+          if (!group.date && groupDate) group.date = groupDate;
         }
       }
 
-      // Trier par date décroissante
-      const sorted = Array.from(byDate.values()).sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
+      // Sort groups by date (theme.date when available) descending
+      const sorted = Array.from(byKey.values()).sort((a, b) => {
+        const ta = new Date(a.date).getTime();
+        const tb = new Date(b.date).getTime();
+        return tb - ta;
+      });
 
       setGroups(sorted);
     } catch (err) {
