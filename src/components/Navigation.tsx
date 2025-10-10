@@ -100,6 +100,9 @@ export default function Navigation() {
           <Link href="/historique" className="btn-ghost h-9 px-3">
             Historique
           </Link>
+          <Link href="/late-post" className="btn-ghost h-9 px-3">
+            Poster en retard
+          </Link>
 
           <div className="flex items-center gap-2 pl-0 sm:pl-2">
             <div className="h-8 w-8 rounded-full bg-violet-600 text-white grid place-items-center font-semibold">
