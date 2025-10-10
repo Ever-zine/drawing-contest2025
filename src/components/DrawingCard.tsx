@@ -72,7 +72,7 @@ export default function DrawingCard({ drawing, className = "", onDownload }: Pro
         {isLate && (
           <div className="absolute top-2 left-2 bg-red-700 text-white px-3 py-1 rounded text-xs font-extrabold flex items-center gap-2 z-10 animate-shake">
             <span>😡</span>
-            <span>EN RETARD — C'EST INADMISSIBLE !</span>
+            <span>EN RETARD — C&apos;EST INADMISSIBLE !</span>
           </div>
         )}
         <Link href={`/drawing/${drawing.id}`} className="block w-full h-full">
